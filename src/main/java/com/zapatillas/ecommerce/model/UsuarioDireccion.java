@@ -1,18 +1,19 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package com.zapatillas.ecommerce.model;
 
 import javax.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @Entity
-@Table(name = "orden_de_compra")
-@Data
+@Table(name = "usuario_direccion")
+@Data  // Lombok generará automáticamente los getters, setters, toString, etc.
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrdenDeCompra {
+public class UsuarioDireccion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,30 +29,12 @@ public class OrdenDeCompra {
     @JoinColumn(name = "id_direccion", nullable = false)
     private Direccion direccion;
 
-    // Fecha de compra
-    private String fechaCompra;
-
-    // Total de la compra
-    private BigDecimal total;
-
-    // Relación con Descuento
-    @ManyToOne
-    @JoinColumn(name = "id_descuento")
-    private Descuento descuento; // Ahora relacionado con la tabla Descuento
-
-    // Relación con los detalles de la orden (productos dentro de la orden)
-    @OneToMany(mappedBy = "ordenDeCompra", cascade = CascadeType.ALL)
-    private List<OrdenCompraDetalle> ordenCompraDetalles;
-
     // Constructor sin argumentos (usado por JPA)
-    public OrdenDeCompra() {}
+    public UsuarioDireccion() {}
 
     // Constructor con los atributos
-    public OrdenDeCompra(Usuario usuario, Direccion direccion, String fechaCompra, BigDecimal total, Descuento descuento) {
+    public UsuarioDireccion(Usuario usuario, Direccion direccion) {
         this.usuario = usuario;
         this.direccion = direccion;
-        this.fechaCompra = fechaCompra;
-        this.total = total;
-        this.descuento = descuento; // Aplicación de descuento
     }
 }
