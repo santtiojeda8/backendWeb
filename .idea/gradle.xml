@@ -5,12 +5,12 @@
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/E-commerce_Project" />
+        <option name="gradleJvm" value="20" />
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$/E-commerce_Project" />
           </set>
         </option>
-        <option name="resolveExternalAnnotations" value="true" />
       </GradleProjectSettings>
     </option>
   </component>

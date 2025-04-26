@@ -23,3 +23,8 @@ dependencies {
 	// Cambiar a una versión compatible con Jakarta Persistence
 	implementation 'org.hibernate:hibernate-core:6.0.0.Final'  // Actualiza a la versión 6.x
 }
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(20) // O la versión de Java que estés usando
+	}
+}

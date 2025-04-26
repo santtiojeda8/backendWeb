@@ -1,81 +1,48 @@
 package com.ecommerce.ecommerce.Controllers;
 
+import com.ecommerce.ecommerce.Entities.Base;
 import com.ecommerce.ecommerce.Services.BaseService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 
-@RestController
-@RequestMapping("/api")
-public class BaseController<E> {
+public abstract class BaseController<E extends Base, ID extends Serializable> {
 
-    @Autowired
-    private BaseService<E> baseService;
+    protected BaseService<E, ID> service;
 
-    // Obtener todas las entidades
-    @GetMapping("/entities")
-    public ResponseEntity<List<E>> getAllEntities() {
-        try {
-            List<E> entities = baseService.findAll();
-            return new ResponseEntity<>(entities, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public BaseController(BaseService<E, ID> service){
+        this.service = service;
     }
 
-    // Obtener una entidad por ID
-    @GetMapping("/entities/{id}")
-    public ResponseEntity<E> getEntityById(@PathVariable Long id) {
-        try {
-            E entity = baseService.finById(id);
-            if (entity == null) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(entity, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @GetMapping()
+    public ResponseEntity<List<E>> listar() throws Exception {
+        List<E> entities = service.listar();
+        return ResponseEntity.ok(entities);
     }
 
-    // Crear una nueva entidad
-    @PostMapping("/entities")
-    public ResponseEntity<E> createEntity(@RequestBody E entity) {
-        try {
-            E createdEntity = baseService.save(entity);
-            return new ResponseEntity<>(createdEntity, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @GetMapping("/{id}")
+    public Optional<E> buscarPorId(@PathVariable ID id) throws Exception {
+        return service.buscarPorId(id);
     }
 
-    // Actualizar una entidad
-    @PutMapping("/entities/{id}")
-    public ResponseEntity<E> updateEntity(@PathVariable Long id, @RequestBody E newEntity) {
-        try {
-            E updatedEntity = baseService.update(id, newEntity);
-            if (updatedEntity == null) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(updatedEntity, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @PostMapping()
+    public ResponseEntity<E> crear(@RequestBody E entity) throws Exception {
+        E entidadCreada = service.crear(entity);
+        return ResponseEntity.ok(entidadCreada);
     }
 
-    // Eliminar una entidad por ID
-    @DeleteMapping("/entities/{id}")
-    public ResponseEntity<Void> deleteEntity(@PathVariable Long id) {
-        try {
-            boolean isDeleted = baseService.delete(id);
-            if (!isDeleted) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            }
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @PutMapping()
+    public ResponseEntity<E> actualizar(@RequestBody E entity) throws Exception {
+        E entidadAct = service.actualizar(entity);
+        return ResponseEntity.ok(entidadAct);
     }
+
+    @DeleteMapping("/{id}")
+    public void eliminar(@PathVariable ID id) throws Exception {
+        service.eliminar(id);
+    }
+
 }

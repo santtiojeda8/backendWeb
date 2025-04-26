@@ -1,40 +1,28 @@
 package com.ecommerce.ecommerce.Services;
 
-import com.ecommerce.ecommerce.Repositories.LocalidadRepositorio;
+
+
+import com.ecommerce.ecommerce.Entities.Localidad;
+import com.ecommerce.ecommerce.Repositories.LocalidadRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class LocalidadService implements BaseService<LocalidadService>{
-
+public class LocalidadService extends BaseService<Localidad,Long>{
     @Autowired
-    private LocalidadRepositorio localityRepository;
-
-
-    @Override
-    public List<LocalidadService> findAll() throws Exception {
-        return List.of();
+    private LocalidadRepository localidadRepository;
+    public LocalidadService(LocalidadRepository localidadRepository){
+        super(localidadRepository);
     }
-
-    @Override
-    public LocalidadService finById(Long id) throws Exception {
-        return null;
-    }
-
-    @Override
-    public LocalidadService save(LocalidadService entity) throws Exception {
-        return null;
-    }
-
-    @Override
-    public LocalidadService update(Long id, LocalidadService newEntity) throws Exception {
-        return null;
-    }
-
-    @Override
-    public boolean delete(Long id) throws Exception {
-        return false;
+    @Transactional
+    public List<Localidad> listarPorProvincia(Long idProvincia)throws Exception{
+        try{
+            return localidadRepository.findAllByProvinciaId(idProvincia);
+        }catch(Exception e){
+            throw new Exception(e.getMessage());
+        }
     }
 }

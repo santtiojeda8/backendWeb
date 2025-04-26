@@ -1,40 +1,49 @@
 package com.ecommerce.ecommerce.Services;
 
+
 import com.ecommerce.ecommerce.Entities.Producto;
-import com.ecommerce.ecommerce.Repositories.ProductoRepositorio;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.ecommerce.ecommerce.Repositories.ProductoRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-public class ProductoService implements BaseService<Producto>{
+public class ProductoService extends BaseService<Producto, Long> {
+    private final ProductoRepository productoRepository;
 
-    @Autowired
-    private ProductoRepositorio productRepository;
-
-    @Override
-    public List<Producto> findAll() throws Exception {
-        return List.of();
+    public ProductoService(ProductoRepository productoRepository) {
+        super(productoRepository);
+        this.productoRepository = productoRepository;
     }
 
-    @Override
-    public Producto finById(Long id) throws Exception {
-        return null;
+    public List<Producto> findAllByCategoriaId(Long categoriaId) throws Exception {
+       try{
+           return productoRepository.findAllByCategoriaId(categoriaId);
+       }catch (Exception e){
+           throw new Exception(e.getMessage());
+       }
+    }
+    @Transactional
+    public List<Producto> findProductosConPromocion() throws Exception  {
+        try{
+            return productoRepository.findAll().stream()
+                    .filter(Producto::isTienePromocion)
+                    .collect(Collectors.toList());
+        }catch (Exception e){
+            throw new Exception(e.getMessage());
+        }
+
     }
 
-    @Override
-    public Producto save(Producto entity) throws Exception {
-        return null;
+    public List<Producto> buscarPorNombre(String keyword)  throws Exception {
+        try{
+            return productoRepository.findByDenominacionContainingIgnoreCase(keyword);
+        }catch (Exception e){
+            throw new Exception(e.getMessage());
+        }
+
     }
 
-    @Override
-    public Producto update(Long id, Producto newEntity) throws Exception {
-        return null;
-    }
-
-    @Override
-    public boolean delete(Long id) throws Exception {
-        return false;
-    }
 }

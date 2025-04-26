@@ -1,20 +1,61 @@
 package com.ecommerce.ecommerce.Services;
 
+
+import com.ecommerce.ecommerce.Entities.Base;
+import com.ecommerce.ecommerce.Repositories.BaseRepository;
+import org.springframework.transaction.annotation.Transactional;
+
+
+import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 
-public interface BaseService<E>{
-    // Mostrar todas las entidades
-    public List<E> findAll() throws Exception;
+public class BaseService<E extends Base, ID extends Serializable> {
 
-    // Mostrar entidad por Id
-    public E finById(Long id) throws Exception;
+    protected BaseRepository<E, ID> baseRepository;
 
-    // Crear Entidad
-    public E save(E entity) throws Exception;
+    public BaseService(BaseRepository<E, ID> baseRepository){
+        this.baseRepository = baseRepository;
+    }
+    @Transactional
 
-    // Actualizar Entidad
-    public E update(Long id, E newEntity) throws Exception;
+    public List<E> listar() throws Exception {
+        try {
+            return baseRepository.findAll();
+        }catch(Exception e){
+            throw new Exception(e.getMessage());
+        }
+    }
 
-    // Eliminar Entidad por Id
-    public boolean delete(Long id) throws Exception;
+    public Optional<E> buscarPorId(ID id) throws Exception {
+        try {
+            return Optional.ofNullable(baseRepository.findById(id).orElse(null));
+        }catch(Exception e){
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    public E crear(E entity) throws Exception {
+        try{
+            return baseRepository.save(entity);
+        }catch(Exception e){
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    public E actualizar(E entity) throws Exception {
+        try{
+            return baseRepository.save(entity);
+        }catch(Exception e){
+            throw new Exception(e.getMessage());
+        }
+    }
+
+    public void eliminar(ID id) throws Exception {
+        try{
+            baseRepository.deleteById(id);
+        }catch(Exception e){
+            throw new Exception(e.getMessage());
+        }
+    }
 }

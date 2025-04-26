@@ -1,40 +1,37 @@
 package com.ecommerce.ecommerce.Services;
 
+
+
 import com.ecommerce.ecommerce.Entities.Direccion;
-import com.ecommerce.ecommerce.Repositories.DireccionRepositorio;
+import com.ecommerce.ecommerce.Repositories.DireccionRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-public class DireccionService implements BaseService<Direccion>{
-
+public class DireccionService extends BaseService<Direccion, Long> {
     @Autowired
-    private DireccionRepositorio adressRepository;
-
-    @Override
-    public List<Direccion> findAll() throws Exception {
-        return List.of();
+    private DireccionRepository direccionRepository;
+    public DireccionService(DireccionRepository direccionRepository){
+        super(direccionRepository);
+    }
+    @Transactional
+    public List<Direccion> listarPorLocalidad(Long idLocalidad)throws Exception{
+        try{
+            return direccionRepository.findAllByLocalidadId(idLocalidad);
+        }catch(Exception e){
+            throw new Exception(e.getMessage());
+        }
+    }
+    @Transactional
+    public List<Direccion> listarPorClientesID(Long idCliente)throws Exception{
+        try{
+            return direccionRepository.findAllByClientesAndId(idCliente);
+        }catch(Exception e){
+            throw new Exception(e.getMessage());
+        }
     }
 
-    @Override
-    public Direccion finById(Long id) throws Exception {
-        return null;
-    }
-
-    @Override
-    public Direccion save(Direccion entity) throws Exception {
-        return null;
-    }
-
-    @Override
-    public Direccion update(Long id, Direccion newEntity) throws Exception {
-        return null;
-    }
-
-    @Override
-    public boolean delete(Long id) throws Exception {
-        return false;
-    }
 }

@@ -5,20 +5,19 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 
+@MappedSuperclass
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Setter
-@Getter
-@MappedSuperclass
-public class Base implements Serializable {
+@SuperBuilder
+public abstract class Base implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Cambiado a IDENTITY
+    protected Long id;
 }
