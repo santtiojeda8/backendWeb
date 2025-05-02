@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/ordenesCompra")
+@RequestMapping("/orden_compra")
 public class OrdenCompraController extends BaseController<OrdenCompra, Long> {
 
     private final OrdenCompraService ordenCompraService;
@@ -27,8 +27,4 @@ public class OrdenCompraController extends BaseController<OrdenCompra, Long> {
         return ordenCompraService.obtenerPorFecha(fechaCompra);
     }
 
-    @GetMapping("/descuento/{idDescuento}")
-    public List<OrdenCompra> obtenerPorDescuento(@PathVariable Long idDescuento) throws Exception {
-        return ordenCompraService.obtenerPorDescuento(idDescuento);
-    }
 }

@@ -11,10 +11,5 @@ import java.util.Optional;
 @Repository
 public interface DescuentosRepository extends BaseRepository<Descuento, Long> {
 
-    // Método simplificado usando la convención findById
-    Optional<Descuento> findById(Long descuentoId);
 
-    // Consulta para obtener descuentos por ID de producto
-    @Query("SELECT d FROM Descuento d WHERE d.producto.id = :productoId")
-    List<Descuento> findAllByProductoId(@Param("productoId") Long productoId);
 }

@@ -9,6 +9,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/localidades")
+
 public class LocalidadController extends BaseController<Localidad, Long> {
 
     private final LocalidadService localidadService;

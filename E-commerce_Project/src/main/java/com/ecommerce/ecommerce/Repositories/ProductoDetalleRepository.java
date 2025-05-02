@@ -54,3 +54,4 @@ public interface ProductoDetalleRepository extends BaseRepository<ProductoDetall
     List<Color> obtenerColoresDisponibles(@Param("productoId") Long productoId);
 
 }
+

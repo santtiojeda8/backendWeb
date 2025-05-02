@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Optional;
 
+
 @Service
 public class AdminService extends BaseService<Admin, Long> {
 
@@ -30,7 +31,7 @@ public class AdminService extends BaseService<Admin, Long> {
     // Método para buscar por imagen de usuario
     public Admin findByImagenUserId(Long idImagen) throws Exception {
         try {
-            return adminRepository.findByImagenUserId(idImagen);  // Este método utiliza el id de la imagen asociada
+            return adminRepository.findByImagenUserId(idImagen);
         } catch (Exception e) {
             throw new Exception("Error al buscar por imagen de usuario: " + e.getMessage());
         }
@@ -59,7 +60,9 @@ public class AdminService extends BaseService<Admin, Long> {
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
+
     }
+
 
     @Override
     public Admin actualizar(Admin admin) throws Exception {
@@ -82,7 +85,8 @@ public class AdminService extends BaseService<Admin, Long> {
             return super.actualizar(admin);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
-        }
+        }// Validación del rol
+
     }
 
     @Override
@@ -97,7 +101,8 @@ public class AdminService extends BaseService<Admin, Long> {
             super.eliminar(id);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
-        }
+        }// Verificar que el admin exista antes de eliminar
+
     }
 
     private boolean isValidRol(Rol rol) throws Exception {

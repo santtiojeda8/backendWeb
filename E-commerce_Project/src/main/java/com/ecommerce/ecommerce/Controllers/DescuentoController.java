@@ -11,6 +11,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/descuentos")
+
 public class DescuentoController extends BaseController<Descuento, Long> {
 
     private final DescuentosService descuentosService;
@@ -28,17 +29,6 @@ public class DescuentoController extends BaseController<Descuento, Long> {
             Optional<Descuento> descuento = descuentosService.obtenerPorIdDescuento(idDescuento);
             return descuento.map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
-        } catch (Exception e) {
-            return ResponseEntity.status(404).body(null);
-        }
-    }
-
-    // Buscar descuentos por ID de producto
-    @GetMapping("/producto/{idProducto}")
-    public ResponseEntity<List<Descuento>> obtenerPorIdProducto(@PathVariable Long idProducto) {
-        try {
-            List<Descuento> descuentos = descuentosService.obtenerPorIdProducto(idProducto);
-            return ResponseEntity.ok(descuentos);
         } catch (Exception e) {
             return ResponseEntity.status(404).body(null);
         }

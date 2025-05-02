@@ -12,3 +12,4 @@ public class UsuarioService extends BaseService<Usuario, Long> {
         super(usuarioRepository);
     }
 }
+

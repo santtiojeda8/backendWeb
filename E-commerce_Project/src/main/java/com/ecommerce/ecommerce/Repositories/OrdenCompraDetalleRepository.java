@@ -14,4 +14,6 @@ public interface OrdenCompraDetalleRepository extends BaseRepository<OrdenCompra
 
     // Buscar por producto específico en los detalles
     List<OrdenCompraDetalle> findAllByProductoDetalleId(Long productoDetalleId);
+
+
 }

@@ -9,8 +9,11 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
-@Table(name="descuento")
+@Table(name="descuentos")
 @Getter
 @Setter
 @AllArgsConstructor
@@ -31,9 +34,9 @@ public class Descuento extends Base{
     private String descripcionDescuento;
     @Column(name="precio_promocional")
     private Double precioPromocional;
-
-    @ManyToOne
-    @JoinColumn(name = "producto_id") // Nombre de la columna en tabla 'descuento'
-    private Producto producto;
+    @ManyToMany
+    @JoinTable(name = "producto_descuentosid",joinColumns = @JoinColumn(name = "descuentoId"),inverseJoinColumns = @JoinColumn(name="productoId"))
+    private Set<Producto> productos=new HashSet<>();
 }
+
 

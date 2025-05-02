@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/ordenCompraDetalles")
+@RequestMapping("/orden_compra_detalle")
 public class OrdenCompraDetalleController extends BaseController<OrdenCompraDetalle, Long> {
 
     private final OrdenCompraDetalleService ordenCompraDetalleService;
@@ -29,3 +29,4 @@ public class OrdenCompraDetalleController extends BaseController<OrdenCompraDeta
         return ordenCompraDetalleService.obtenerPorProductoDetalle(idProductoDetalle);
     }
 }
+

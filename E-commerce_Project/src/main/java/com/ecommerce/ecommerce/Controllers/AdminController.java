@@ -7,7 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/admins")
+@RequestMapping("/admin")
+
 public class AdminController extends BaseController<Admin, Long> {
 
     private final AdminService adminService;
@@ -40,3 +41,4 @@ public class AdminController extends BaseController<Admin, Long> {
         }
     }
 }
+

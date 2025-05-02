@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/clientes")
+
 public class ClienteController extends BaseController<Cliente, Long> {
 
     private final ClienteService clienteService;

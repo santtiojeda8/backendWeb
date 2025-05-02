@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/producto-detalle")
+@RequestMapping("/producto_detalle")
+
 public class ProductoDetalleController extends BaseController<ProductoDetalle, Long> {
 
     private final ProductoDetalleService productoDetalleService;

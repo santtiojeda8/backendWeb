@@ -10,6 +10,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/direcciones")
+
 public class DireccionController extends BaseController<Direccion, Long> {
 
     private final DireccionService direccionService;

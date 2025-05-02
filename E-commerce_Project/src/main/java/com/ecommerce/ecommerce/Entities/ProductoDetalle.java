@@ -24,6 +24,8 @@ public class ProductoDetalle extends Base{
     private Double precioCompra;
     @Column(name = "stock_actual")
     private Integer stockActual;
+    @Column(name = "cantidad")
+    protected Double  cantidad;
     @Column(name = "stock_maximo")
     private Integer stockMaximo;
     @Enumerated(EnumType.STRING)

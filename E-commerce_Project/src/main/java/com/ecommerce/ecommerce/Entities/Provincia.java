@@ -16,4 +16,3 @@ public class Provincia extends Base{
     @Column(name="provincia")
     private String nombre;
 }
-

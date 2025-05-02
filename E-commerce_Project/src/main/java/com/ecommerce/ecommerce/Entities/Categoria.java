@@ -17,14 +17,15 @@ import java.util.Set;
 public class Categoria extends Base{
     @Column(name="denominacion")
     private String denominacion;
-    @OneToMany(mappedBy = "categoriaPadre")
-    @Builder.Default
-    private Set<Categoria> subcategorias=new HashSet<>();
+
     @ManyToOne
-    @JoinColumn(name="categoriaPadreID")
+    @JoinColumn(name = "categoria_padre_id")
     private Categoria categoriaPadre;
-    @ManyToOne
-    @JoinColumn(name = "categoria_id")
-    private Categoria categoria;
+
+    @OneToMany(mappedBy = "categoriaPadre", cascade = CascadeType.ALL)
+    private Set<Categoria> subcategorias = new HashSet<>();
+
+    @ManyToMany(mappedBy = "categorias")
+    private Set<Producto> productos = new HashSet<>();
 
 }

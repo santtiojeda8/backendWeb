@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-
 @Service
 public class DescuentosService extends BaseService<Descuento, Long> {
 
@@ -19,20 +18,20 @@ public class DescuentosService extends BaseService<Descuento, Long> {
     }
 
     @Override
-    public Descuento crear(Descuento descuento) throws Exception {
-        validarDescuento(descuento); // Validación antes de crear
+    public Descuento crear(Descuento descuentos) throws Exception {
+        validarDescuento(descuentos); // Validación antes de crear
         try {
-            return super.crear(descuento); // Uso del método base para crear
+            return super.crear(descuentos);
         } catch (Exception e) {
             throw new Exception("Error al crear el descuento: " + e.getMessage());
         }
     }
 
     @Override
-    public Descuento actualizar(Descuento descuento) throws Exception {
-        validarDescuento(descuento); // Validación antes de actualizar
+    public Descuento actualizar(Descuento descuentos) throws Exception {
+        validarDescuento(descuentos); // Validación antes de actualizar
         try {
-            return super.actualizar(descuento); // Uso del método base para actualizar
+            return super.actualizar(descuentos);
         } catch (Exception e) {
             throw new Exception("Error al actualizar el descuento: " + e.getMessage());
         }
@@ -48,15 +47,6 @@ public class DescuentosService extends BaseService<Descuento, Long> {
         }
     }
 
-    // Método para obtener descuentos por ID de producto
-    public List<Descuento> obtenerPorIdProducto(Long idProducto) throws Exception {
-        try {
-            // Uso del método findAllByProductoId
-            return descuentosRepository.findAllByProductoId(idProducto);
-        } catch (Exception e) {
-            throw new Exception("No se pudieron obtener los descuentos por ID de producto: " + e.getMessage());
-        }
-    }
 
     // Método de validación de descuento
     private void validarDescuento(Descuento descuento) throws Exception {

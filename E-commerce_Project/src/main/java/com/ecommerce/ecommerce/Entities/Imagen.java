@@ -1,9 +1,7 @@
 package com.ecommerce.ecommerce.Entities;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,8 +17,9 @@ public class Imagen extends Base{
 
     @Column(name = "denominacion")
     private String denominacion;
-    @Column(name = "url_imagen")
-    private String urlImagen;
+    @ManyToOne
+    @JoinColumn(name = "producto_id")
+    private Producto producto;
 
 
 }

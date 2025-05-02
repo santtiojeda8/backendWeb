@@ -6,14 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/usuario")
-public class UsuarioController extends BaseController<Usuario, Long> {
-
-    private final UsuarioService usuarioService;
-
-    @Autowired
-    public UsuarioController(UsuarioService usuarioService) {
+@RequestMapping("/usuarios")
+public class UsuarioController extends BaseController<Usuario,Long>{
+    public UsuarioController(UsuarioService usuarioService){
         super(usuarioService);
-        this.usuarioService = usuarioService;
     }
+    @Autowired
+    private UsuarioService usuarioService;
 }

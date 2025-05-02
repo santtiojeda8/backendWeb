@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/imagenes")
+@RequestMapping("/imagen")
 public class ImagenController extends BaseController<Imagen, Long> {
 
     private final ImagenService imagenService;
@@ -18,3 +18,4 @@ public class ImagenController extends BaseController<Imagen, Long> {
         this.imagenService = imagenService;
     }
 }
+

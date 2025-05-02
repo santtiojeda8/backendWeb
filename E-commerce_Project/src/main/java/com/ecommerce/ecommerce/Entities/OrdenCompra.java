@@ -17,10 +17,6 @@ import java.util.Set;
 public class OrdenCompra extends Base {
     @Column(name = "total")
     private Double total;
-
-    @ManyToOne
-    @JoinColumn(name = "descuento_id")
-    private Descuento descuento;
     @Column(name = "fecha_compra")
     private LocalDateTime fechaCompra;
     @Column(name = "direccion_envio")

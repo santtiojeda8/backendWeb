@@ -5,20 +5,19 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@DiscriminatorValue("CLIENTE")  // Asigna un valor discriminador para identificar los Clientes
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Cliente extends Usuario {
-
-    @Column(name = "rol")
-    private Rol rol;
+@SuperBuilder
+@DiscriminatorValue("clientes")
+public class Cliente extends Usuario{
 
     @ManyToMany(mappedBy = "clientes")
-    private List<Direccion> direcciones = new ArrayList<>();
+    private List<Direccion> direcciones= new ArrayList<>();
 }

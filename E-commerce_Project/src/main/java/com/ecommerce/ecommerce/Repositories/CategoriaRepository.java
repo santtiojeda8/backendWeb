@@ -6,9 +6,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface CategoriaRepository extends BaseRepository<Categoria, Long> {
-
-    // Buscar todas las subcategorías de una categoría padre dada
-    List<Categoria> findAllByCategoriaPadre_Id(Long idCategoriaPadre);
+public interface CategoriaRepository extends BaseRepository<Categoria,Long> {
+    List<Categoria> findByCategoriaPadreId(Long idPadre);
+    List<Categoria> findByCategoriaPadreIsNull();
 
 }

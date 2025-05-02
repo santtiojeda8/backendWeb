@@ -10,3 +10,4 @@ import java.util.List;
 public interface LocalidadRepository extends BaseRepository<Localidad,Long>{
     List<Localidad> findAllByProvinciaId(Long idProvincia);
 }
+

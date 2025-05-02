@@ -36,10 +36,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                     .mapToDouble(det -> det.getProductoDetalle().getPrecioCompra() * det.getCantidad())
                     .sum();
 
-            if (ordenCompra.getDescuento() != null) {
-                totalCalculado -= ordenCompra.getDescuento().getPrecioPromocional();
-            }
-
             ordenCompra.setTotal(totalCalculado);
 
             // Asignar referencia de orden a cada detalle (importante si usás persistencia en cascada)
@@ -60,13 +56,5 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
         }catch (Exception e){
             throw new Exception(e.getMessage());
         }
-    }
-    public List<OrdenCompra> obtenerPorDescuento(Long idDescuento) throws Exception {
-        try{
-            return ordenCompraRepository.findAllByDescuentoId(idDescuento);
-        }catch (Exception e){
-            throw new Exception(e.getMessage());
-        }
-
     }
 }
