@@ -29,8 +29,10 @@ public class ProductoDetalle extends Base{
     @Column(name = "stock_maximo")
     private Integer stockMaximo;
     @Enumerated(EnumType.STRING)
+    @Column(name = "color", length = 20)
     private Color color;
     @Enumerated(EnumType.STRING)
+    @Column(name = "talle", length = 20)
     private Talle talle;
 
 }

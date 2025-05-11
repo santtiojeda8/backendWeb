@@ -23,7 +23,7 @@ public class Producto extends Base{
     @Column(name = "precio_venta")
     protected Double precioVenta;
     @Enumerated(EnumType.STRING)
-    @Column(name = "sexo_producto")
+    @Column(name = "sexo_producto", length = 20)
     protected Sexo sexo;
     @Column(name = "tiene_promocion")
     private boolean tienePromocion;
@@ -33,14 +33,18 @@ public class Producto extends Base{
             joinColumns = @JoinColumn(name = "producto_id"),
             inverseJoinColumns = @JoinColumn(name = "categoria_id")
     )
+    @Builder.Default
     private Set<Categoria> categorias = new HashSet<>();
 
     @OneToMany
     @JoinColumn(name = "imagenesProductoId")
+    @Builder.Default
     protected Set<Imagen> imagenes=new HashSet<>();
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<ProductoDetalle> productos_detalles = new HashSet<>();
     @ManyToMany(mappedBy = "productos")
+    @Builder.Default
     private Set<Descuento> descuentos = new HashSet<>();
 
 

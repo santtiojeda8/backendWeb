@@ -1,6 +1,13 @@
 package com.ecommerce.ecommerce.Entities.enums;
 
 public enum Talle {
+
+    XS,
+    S,
+    M,
+    L,
+    XL,
+    XXL,
     TALLE_25,
     TALLE_26,
     TALLE_27,

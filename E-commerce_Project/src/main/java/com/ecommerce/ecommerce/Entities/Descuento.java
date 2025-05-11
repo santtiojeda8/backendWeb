@@ -1,10 +1,7 @@
 package com.ecommerce.ecommerce.Entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
@@ -36,6 +33,7 @@ public class Descuento extends Base{
     private Double precioPromocional;
     @ManyToMany
     @JoinTable(name = "producto_descuentosid",joinColumns = @JoinColumn(name = "descuentoId"),inverseJoinColumns = @JoinColumn(name="productoId"))
+    @Builder.Default
     private Set<Producto> productos=new HashSet<>();
 }
 

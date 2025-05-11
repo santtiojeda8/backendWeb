@@ -2,9 +2,30 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.4.4'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(20)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
 repositories {
 	mavenCentral()
+}
+
+ext {
+	set('snippetsDir', file("build/generated-snippets"))
 }
 
 dependencies {
@@ -19,12 +40,19 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-	// Cambiar a una versión compatible con Jakarta Persistence
-	implementation 'org.hibernate:hibernate-core:6.0.0.Final'  // Actualiza a la versión 6.x
+	// https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-envers
+	implementation("org.hibernate.orm:hibernate-envers:6.6.13.Final")
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5' // O la última versión estable
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5' // Usar runtimeOnly porque es la implementación
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // Usar runtieOnly para la serialización/deserialización JSON (Jackson)
 }
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(20) // O la versión de Java que estés usando
-	}
+
+tasks.named('test') {
+	outputs.dir snippetsDir
+	useJUnitPlatform()
+}
+
+tasks.named('asciidoctor') {
+	inputs.dir snippetsDir
+	dependsOn test
 }

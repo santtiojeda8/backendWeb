@@ -23,9 +23,11 @@ public class Categoria extends Base{
     private Categoria categoriaPadre;
 
     @OneToMany(mappedBy = "categoriaPadre", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<Categoria> subcategorias = new HashSet<>();
 
     @ManyToMany(mappedBy = "categorias")
+    @Builder.Default
     private Set<Producto> productos = new HashSet<>();
 
 }

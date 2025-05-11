@@ -1,10 +1,7 @@
 package com.ecommerce.ecommerce.Entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -15,6 +12,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@EqualsAndHashCode(callSuper = true)
 public class Direccion extends Base{
     @Column(name="calle")
     private String calle;
@@ -27,5 +25,6 @@ public class Direccion extends Base{
     private Localidad localidad;
     @ManyToMany
     @JoinTable(name = "direccion_clienteId",joinColumns = @JoinColumn(name = "direccionId"),inverseJoinColumns = @JoinColumn(name="clienteId"))
+    @Builder.Default
     private Set<Cliente> clientes=new HashSet<>();
 }

@@ -23,5 +23,6 @@ public class OrdenCompra extends Base {
     private String direccionEnvio;
 
     @OneToMany(mappedBy = "ordenCompra", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<OrdenCompraDetalle> detalles = new HashSet<>();
 }
