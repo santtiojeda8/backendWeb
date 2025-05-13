@@ -91,5 +91,5 @@ public class Usuario extends Base implements UserDetails {
 
     @Override
     public boolean isEnabled() { return true; }
-    // ... otros métodos si tienes ...
+
 }

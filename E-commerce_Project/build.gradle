@@ -41,7 +41,7 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	// https://mvnrepository.com/artifact/org.hibernate.orm/hibernate-envers
-	implementation("org.hibernate.orm:hibernate-envers:6.6.13.Final")
+	implementation("org.hibernate.orm:hibernate-envers:6.6.13.Final") // Verifica si esta versión es compatible con Spring Boot 3.4.4
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5' // O la última versión estable
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5' // Usar runtimeOnly porque es la implementación
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // Usar runtieOnly para la serialización/deserialización JSON (Jackson)
@@ -50,6 +50,10 @@ dependencies {
 tasks.named('test') {
 	outputs.dir snippetsDir
 	useJUnitPlatform()
+	reports {
+		html.outputLocation = file("${buildDir}/reports/tests/test")
+	}
+
 }
 
 tasks.named('asciidoctor') {

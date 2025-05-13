@@ -1,7 +1,5 @@
 package com.ecommerce.ecommerce.Entities;
 
-
-
 import com.ecommerce.ecommerce.Entities.enums.Sexo;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,6 +25,7 @@ public class Producto extends Base{
     protected Sexo sexo;
     @Column(name = "tiene_promocion")
     private boolean tienePromocion;
+
     @ManyToMany
     @JoinTable(
             name = "producto_categoria",
@@ -36,16 +35,20 @@ public class Producto extends Base{
     @Builder.Default
     private Set<Categoria> categorias = new HashSet<>();
 
-    @OneToMany
-    @JoinColumn(name = "imagenesProductoId")
+
+    @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true) // Indica que el campo 'producto' en la entidad Imagen es el dueño de la relación
     @Builder.Default
-    protected Set<Imagen> imagenes=new HashSet<>();
+    protected Set<Imagen> imagenes = new HashSet<>();
+
+
+
     @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private Set<ProductoDetalle> productos_detalles = new HashSet<>();
+
     @ManyToMany(mappedBy = "productos")
     @Builder.Default
     private Set<Descuento> descuentos = new HashSet<>();
 
-
+    // ... otros métodos si los tienes
 }
