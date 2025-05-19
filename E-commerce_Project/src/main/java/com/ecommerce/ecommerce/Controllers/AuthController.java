@@ -4,12 +4,14 @@ import com.ecommerce.ecommerce.Services.AuthService;
 import com.ecommerce.ecommerce.dto.AuthResponse;
 import com.ecommerce.ecommerce.dto.LoginRequest;
 import com.ecommerce.ecommerce.dto.RegisterRequest;
-import lombok.AllArgsConstructor; // Usamos @AllArgsConstructor para inyección vía constructor
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 @RestController
 @RequestMapping("/auth")
 @AllArgsConstructor
@@ -23,7 +25,7 @@ public class AuthController {
     @PostMapping("/register")
     // Recibe el cuerpo de la petición como un objeto RegisterRequest
     public ResponseEntity<AuthResponse> register(
-            @RequestBody RegisterRequest request
+            @Valid @RequestBody RegisterRequest request // <<-- AÑADIR @Valid aquí
     ) {
         // Llama al método register del AuthService y devuelve la respuesta con el token.
         return ResponseEntity.ok(authService.register(request));
@@ -34,7 +36,7 @@ public class AuthController {
     @PostMapping("/login")
     // Recibe el cuerpo de la petición como un objeto LoginRequest
     public ResponseEntity<AuthResponse> login(
-            @RequestBody LoginRequest request
+            @Valid @RequestBody LoginRequest request // <<-- AÑADIR @Valid aquí
     ) {
         // Llama al método login del AuthService y devuelve la respuesta con el token.
         return ResponseEntity.ok(authService.login(request));

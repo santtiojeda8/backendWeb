@@ -1,5 +1,6 @@
 package com.ecommerce.ecommerce.Entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,6 +31,7 @@ public class OrdenCompra extends Base {
     // orphanRemoval = true: Si un detalle se desvincula de esta orden, se elimina de la base de datos.
     @OneToMany(mappedBy = "ordenCompra", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @JsonManagedReference
     private Set<OrdenCompraDetalle> detalles = new HashSet<>();
 
     // --- Métodos de Ayuda para Gestionar la Relación y el Total ---
