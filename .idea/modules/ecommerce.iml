@@ -6,6 +6,16 @@
       <excludeFolder url="file://$MODULE_DIR$/../../E-commerce_Project/.gradle" />
       <excludeFolder url="file://$MODULE_DIR$/../../E-commerce_Project/build" />
     </content>
+    <content url="file://$MODULE_DIR$/../../E-commerce_Project">
+      <excludeFolder url="file://$MODULE_DIR$/../../E-commerce_Project/.gradle" />
+      <excludeFolder url="file://$MODULE_DIR$/../../E-commerce_Project/build" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../E-commerce_Project">
+      <excludeFolder url="file://$MODULE_DIR$/../../E-commerce_Project/.gradle" />
+      <excludeFolder url="file://$MODULE_DIR$/../../E-commerce_Project/build" />
+    </content>
+    <content url="file://$MODULE_DIR$/../../E-commerce_Project" />
+    <content url="file://$MODULE_DIR$/../../E-commerce_Project" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
