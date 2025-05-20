@@ -4,45 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51cd50ff-ca89-482b-9568-08d8584988a0" name="Changes" comment="&quot;Base de datos lista (eso creo debo de hacer inserts en las tablas e ir viendo si hay incompatibilidades), se implementos la seguridad JWT&quot;">
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoSpecification.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/CategoriaDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/DescuentoDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ImagenDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductFilters.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDetalleDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/AdminController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ClienteController.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/UsuarioController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/UsuarioController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Admin.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Categoria.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Categoria.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Cliente.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Descuento.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Descuento.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Direccion.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Direccion.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Imagen.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Imagen.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/OrdenCompra.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/OrdenCompra.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Producto.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Producto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoDetalle.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoDetalle.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Usuario.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Usuario.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/AdminRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/BaseRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/BaseRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ClienteRepository.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/UsuarioRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/UsuarioRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/AdminService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/AuthService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ClienteService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/JwtService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/JwtService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/UsuarioService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/UsuarioService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/LoginRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/LoginRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/RegisterRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/RegisterRequest.java" afterDir="false" />
-    </list>
+    <list default="true" id="51cd50ff-ca89-482b-9568-08d8584988a0" name="Changes" comment="&quot;Base de datos lista (eso creo debo de hacer inserts en las tablas e ir viendo si hay incompatibilidades), se implementos la seguridad JWT&quot;" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -58,12 +20,7 @@
       <state>
         <projects_view>
           <tree_state>
-            <expand>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="ecommerce" type="f1a62948:ProjectNode" />
-              </path>
-            </expand>
+            <expand />
             <select />
           </tree_state>
         </projects_view>
@@ -100,32 +57,41 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.Build E-commerce_Project.executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.E-commerce_Project.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;RamaSeba&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/astud/IdeaProjects/backendWeb&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;reference.projectsettings.compiler.annotationProcessors&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Build E-commerce_Project.executor": "Run",
+    "Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor": "Run",
+    "Gradle.E-commerce_Project.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "RamaSeba",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "C:/Users/astud/IdeaProjects/backendWeb",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "settings.editor.selected.configurable": "reference.projectsettings.compiler.annotationProcessors"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\astud\IdeaProjects\backendWeb\E-commerce_Project\src\main\java\com\ecommerce\ecommerce" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Application.Unnamed">
     <configuration name="Unnamed" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="20" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
       <option name="MAIN_CLASS_NAME" value="com.ecommerce.ecommerce.EcommerceApplication" />
       <module name="ecommerce.main" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="EcommerceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
+      <module name="ecommerce.main" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ecommerce.ecommerce.EcommerceApplication" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
