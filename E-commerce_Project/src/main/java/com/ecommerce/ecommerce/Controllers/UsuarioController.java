@@ -1,123 +1,223 @@
 package com.ecommerce.ecommerce.Controllers;
-import com.ecommerce.ecommerce.Entities.Direccion; // Importar Direccion
+
+import com.ecommerce.ecommerce.Entities.Direccion;
 import com.ecommerce.ecommerce.Entities.Usuario;
 import com.ecommerce.ecommerce.Services.UsuarioService;
+import com.ecommerce.ecommerce.Services.BaseService; // Necesario para BaseController
+import com.ecommerce.ecommerce.dto.UserDTO;
+import com.ecommerce.ecommerce.dto.UserProfileUpdateDTO;
+import com.ecommerce.ecommerce.dto.UpdateCredentialsRequest; // Importar si lo usas
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus; // Importar HttpStatus
-import org.springframework.http.ResponseEntity; // Importar ResponseEntity
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+
+// ¡¡¡FALTAN ESTAS IMPORTACIONES PARA SPRING SECURITY!!!
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+// FIN DE LAS IMPORTACIONES FALTANTES
+
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Optional; // Necesario para Optional
 
 @RestController
 @RequestMapping("/usuarios")
-public class UsuarioController extends BaseController<Usuario,Long>{
-    // Eliminamos el @Autowired aquí si ya lo inyectamos en el constructor
-    // @Autowired
-    private final UsuarioService usuarioService; // Usamos final y lo inyectamos por constructor
 
-    @Autowired // Inyección por constructor (recomendado)
+public class UsuarioController extends BaseController<Usuario,Long>{
+    private final UsuarioService usuarioService;
+
+    @Autowired
     public UsuarioController(UsuarioService usuarioService){
-        super(usuarioService);
-        this.usuarioService = usuarioService; // Asignamos el servicio
+        // PROBLEMA 1: Aquí está el error. Si BaseController espera un BaseService<Usuario, Long>,
+        // y UsuarioService implementa/extiende BaseService<Usuario, Long>, esto debería funcionar.
+        // Si no funciona, significa que UsuarioService no implementa BaseService<Usuario, Long>.
+        // Asumiendo que UsuarioService SÍ implementa o extiende BaseService<Usuario, Long>:
+        super((BaseService<Usuario, Long>) usuarioService); // <-- Casteo explícito, o revisar herencia/interfaces
+        this.usuarioService = usuarioService;
     }
 
-    // El BaseController ya te da endpoints básicos como GET /usuarios, GET /usuarios/{id}, POST /usuarios, PUT /usuarios/{id}, DELETE /usuarios/{id}
-
-    // Puedes añadir endpoints específicos de usuario aquí si los necesitas, por ejemplo, buscar por username
+    // Endpoint de ejemplo para obtener usuario por username
     @GetMapping("/by-username/{username}")
-    public ResponseEntity<Usuario> getUsuarioByUsername(@PathVariable String username) {
+    public ResponseEntity<UserDTO> getUsuarioByUsername(@PathVariable String username) {
         try {
-            // Usamos el Optional<Usuario> devuelto por el servicio
-            Usuario usuario = usuarioService.findByUserName(username)
-                    .orElseThrow(() -> new Exception("Usuario no encontrado con username: " + username));
-            return ResponseEntity.ok(usuario);
+            // PROBLEMA 2: 'findUserDTOByUsername' no existe todavía en UsuarioService.
+            // Vamos a añadirlo o, si solo tienes findByUserName, mapearlo aquí.
+            // Opción 1: Si quieres que el servicio devuelva DTO:
+            // UserDTO userDTO = usuarioService.findUserDTOByUsername(username);
+            // Opción 2: Si el servicio solo devuelve la Entidad, mapea aquí:
+            Optional<Usuario> usuarioOptional = usuarioService.findByUserName(username); // Suponiendo que tienes este en tu UsuarioRepository o servicio
+            if (usuarioOptional.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            return ResponseEntity.ok(usuarioService.mapToUserDTO(usuarioOptional.get())); // mapToUserDTO DEBE ser público en UsuarioService.
+            // Si no lo es, muévelo a un "Mapper" o recrea el DTO aquí.
         } catch (Exception e) {
-            // Manejo de errores: usuario no encontrado u otro error
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // O un mensaje de error
+            System.err.println("Error al obtener usuario por username: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // Cambiado a INTERNAL_SERVER_ERROR
+        }
+    }
+
+    // --- Endpoints para Perfil de Usuario (Autenticado) ---
+
+    @GetMapping("/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDTO> getCurrentUserProfile() {
+        try {
+            UserDTO userDTO = usuarioService.getCurrentUser();
+            return ResponseEntity.ok(userDTO);
+        } catch (Exception e) {
+            System.err.println("Error al obtener perfil de usuario: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PutMapping("/profile/update")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDTO> updateCurrentUserProfile(@RequestBody UserProfileUpdateDTO userProfileUpdateDTO) {
+        try {
+            Long userId = getUserIdFromAuthentication(); // Método auxiliar (se arreglará más abajo)
+            UserDTO updatedUser = usuarioService.updateProfile(userId, userProfileUpdateDTO);
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            System.err.println("Error al actualizar perfil de usuario: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PostMapping("/profile/image")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDTO> uploadProfileImage(@RequestParam("file") MultipartFile file) {
+        try {
+            Long userId = getUserIdFromAuthentication(); // Método auxiliar (se arreglará más abajo)
+            UserDTO updatedUser = usuarioService.uploadProfileImage(userId, file);
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            System.err.println("Error al subir imagen de perfil: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PutMapping("/credentials/update")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserDTO> updateCredentials(@RequestBody UpdateCredentialsRequest request) {
+        try {
+            Long userId = getUserIdFromAuthentication(); // Método auxiliar (se arreglará más abajo)
+            UserDTO updatedUser = usuarioService.updateCredentials(userId, request);
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            System.err.println("Error al actualizar credenciales: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
     // --- Endpoints para gestionar Direcciones de un Usuario ---
+    // PROBLEMA 2: Estos métodos de gestión de direcciones no existen en UsuarioService.
+    // Los marcaremos como "a implementar" en el servicio.
 
-    // GET /usuarios/{userId}/direcciones - Obtener todas las direcciones de un usuario
     @GetMapping("/{userId}/direcciones")
     public ResponseEntity<List<Direccion>> getDireccionesByUserId(@PathVariable Long userId) {
         try {
-            List<Direccion> direcciones = usuarioService.getDireccionesByUserId(userId);
+            List<Direccion> direcciones = usuarioService.getDireccionesByUserId(userId); // Requiere implementación en UsuarioService
             return ResponseEntity.ok(direcciones);
         } catch (Exception e) {
-            // Manejo de errores: usuario no encontrado u otro error
-            // CORRECCIÓN: Se corrigió HttpStatus.NOT_NOT_FOUND a HttpStatus.NOT_FOUND
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // O un mensaje de error
+            System.err.println("Error al obtener direcciones para el usuario " + userId + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // Cambiado a INTERNAL_SERVER_ERROR
         }
     }
 
-    // POST /usuarios/{userId}/direcciones - Añadir una nueva dirección a un usuario
     @PostMapping("/{userId}/direcciones")
     public ResponseEntity<Direccion> addDireccionToUser(@PathVariable Long userId, @RequestBody Direccion direccion) {
         try {
-            Direccion savedDireccion = usuarioService.addDireccionToUser(userId, direccion);
-            // Devolvemos 201 Created si la creación fue exitosa
+            Direccion savedDireccion = usuarioService.addDireccionToUser(userId, direccion); // Requiere implementación en UsuarioService
             return ResponseEntity.status(HttpStatus.CREATED).body(savedDireccion);
         } catch (Exception e) {
-            // Manejo de errores: usuario no encontrado, validación fallida, etc.
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // O un mensaje de error
+            System.err.println("Error al añadir dirección para el usuario " + userId + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 
-    // PUT /usuarios/{userId}/direcciones/{direccionId} - Actualizar una dirección específica de un usuario
     @PutMapping("/{userId}/direcciones/{direccionId}")
     public ResponseEntity<Direccion> updateDireccionForUser(@PathVariable Long userId, @PathVariable Long direccionId, @RequestBody Direccion updatedDireccion) {
         try {
-            Direccion savedDireccion = usuarioService.updateDireccionForUser(userId, direccionId, updatedDireccion);
+            Direccion savedDireccion = usuarioService.updateDireccionForUser(userId, direccionId, updatedDireccion); // Requiere implementación en UsuarioService
             return ResponseEntity.ok(savedDireccion);
         } catch (Exception e) {
-            // Manejo de errores: usuario/dirección no encontrada, validación fallida, etc.
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // O un mensaje de error
+            System.err.println("Error al actualizar dirección " + direccionId + " para el usuario " + userId + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 
-
-    // DELETE /usuarios/{userId}/direcciones/{direccionId} - Eliminar una dirección específica de un usuario
     @DeleteMapping("/{userId}/direcciones/{direccionId}")
     public ResponseEntity<?> removeDireccionFromUser(@PathVariable Long userId, @PathVariable Long direccionId) {
         try {
-            usuarioService.removeDireccionFromUser(userId, direccionId);
-            // Devolvemos 204 No Content para indicar que la eliminación fue exitosa y no hay contenido que devolver
+            usuarioService.removeDireccionFromUser(userId, direccionId); // Requiere implementación en UsuarioService
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         } catch (Exception e) {
-            // Manejo de errores: usuario/dirección no encontrada, etc.
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // O un mensaje de error
+            System.err.println("Error al eliminar dirección " + direccionId + " para el usuario " + userId + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 
+    // --- Método auxiliar para obtener el ID del usuario autenticado ---
+    private Long getUserIdFromAuthentication() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    // Otros endpoints que necesiten ser movidos de ClienteController/AdminController...
-    // Ejemplo: Endpoint para registrar un nuevo usuario (antes en ClienteController)
-    /*
-    @PostMapping("/register")
-    public ResponseEntity<Usuario> registerNewUser(@RequestBody Usuario newUser) {
-        try {
-            Usuario registeredUser = usuarioService.registerNewUser(newUser);
-            return ResponseEntity.status(HttpStatus.CREATED).body(registeredUser);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // O un mensaje de error
+        if (authentication == null) {
+            System.err.println("ERROR: No hay autenticación en el SecurityContext.");
+            throw new IllegalStateException("No se pudo obtener el ID del usuario autenticado: No hay autenticación.");
+        }
+
+        if (!authentication.isAuthenticated()) {
+            System.err.println("ERROR: El usuario no está autenticado.");
+            throw new IllegalStateException("No se pudo obtener el ID del usuario autenticado: El usuario no está autenticado.");
+        }
+
+        Object principal = authentication.getPrincipal();
+
+        System.out.println("DEBUG: Tipo del principal: " + principal.getClass().getName()); // Para depuración
+
+        if (principal instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) principal;
+            // Si tu UserDetails personalizado tiene un getId(), úsalo directamente:
+            // return userDetails.getId();
+            String usernameOrEmail = userDetails.getUsername();
+            System.out.println("DEBUG: Principal es UserDetails, username: " + usernameOrEmail);
+            try {
+                return Long.parseLong(usernameOrEmail); // Intentar parsear como ID
+            } catch (NumberFormatException e) {
+                // Si no es un ID, intenta buscar por email
+                // **IMPORTANTE:** Asumo que tienes un método en tu servicio para esto.
+                // Si no lo tienes, debes crearlo (o usar el que ya tenías).
+                // **Asegúrate de que este método maneje excepciones correctamente.**
+                // return usuarioService.getUserIdByUsernameOrEmail(usernameOrEmail);
+                System.err.println("ERROR: El username no es un ID numérico. Necesitas un método para obtener el ID por username/email.");
+                throw new IllegalStateException("No se pudo obtener el ID del usuario autenticado: El username no es un ID numérico.");
+            }
+        } else if (principal instanceof Long) {
+            System.out.println("DEBUG: Principal es Long: " + principal);
+            return (Long) principal;
+        } else if (principal instanceof String) {
+            String usernameOrEmail = (String) principal;
+            System.out.println("DEBUG: Principal es String: " + usernameOrEmail);
+            try {
+                return Long.parseLong(usernameOrEmail); // Intentar parsear como ID
+            } catch (NumberFormatException e) {
+                // Si no es un ID, intenta buscar por email
+                // **IMPORTANTE:** Asumo que tienes un método en tu servicio para esto.
+                // Si no lo tienes, debes crearlo (o usar el que ya tenías).
+                // **Asegúrate de que este método maneje excepciones correctamente.**
+                // return usuarioService.getUserIdByUsernameOrEmail(usernameOrEmail);
+                System.err.println("ERROR: El String principal no es un ID numérico. Necesitas un método para obtener el ID por username/email.");
+                throw new IllegalStateException("No se pudo obtener el ID del usuario autenticado: El String principal no es un ID numérico.");
+            }
+        } else {
+            System.err.println("ERROR: Formato de principal de seguridad no soportado: " + principal.getClass().getName());
+            throw new IllegalStateException("Formato de principal de seguridad no soportado. No se pudo obtener el ID del usuario.");
         }
     }
-    */
-    // Endpoint para cambiar el rol de un usuario (requiere permisos de ADMIN, usar @PreAuthorize)
-     /*
-     @PreAuthorize("hasRole('ADMIN')") // Ejemplo de cómo proteger el endpoint
-     @PutMapping("/{userId}/role")
-     public ResponseEntity<Usuario> changeUserRole(@PathVariable Long userId, @RequestBody Rol newRole) {
-         try {
-             Usuario updatedUser = usuarioService.changeUserRole(userId, newRole);
-             return ResponseEntity.ok(updatedUser);
-         } catch (Exception e) {
-              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // O un mensaje de error
-         }
-     }
-     */
-
 }

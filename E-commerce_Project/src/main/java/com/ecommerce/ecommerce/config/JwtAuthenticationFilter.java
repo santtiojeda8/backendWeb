@@ -60,9 +60,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Esto busca al usuario en tu base de datos (usando tu UsuarioRepository)
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
+
             // 7. Validar el token: verificar que no haya expirado y que pertenezca al usuario encontrado
             if (jwtService.isTokenValid(jwt, userDetails)) {
-                // 8. Si el token es válido, crear un objeto de autenticación para Spring Security
+                // 8. Si el token es válido, crear un objetod e autenticación para Spring Security
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, // El principal (el UserDetails del usuario)
                         null,        // Las credenciales (null en autenticación basada en token)
@@ -80,9 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 11. Pasar la petición al siguiente filtro en la cadena (o al DispatcherServlet si es el último)
-        // Si el token fue válido, la petición continuará con el usuario autenticado en el contexto.
-        // Si no, la petición continuará pero el usuario no estará autenticado, y los endpoints protegidos le denegarán el acceso.
+
         filterChain.doFilter(request, response);
     }
 }

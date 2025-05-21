@@ -4,5 +4,10 @@
     <annotationProcessing>
       <profile default="true" name="Default" enabled="true" />
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="ecommerce" target="20" />
+      <module name="ecommerce.main" target="20" />
+      <module name="ecommerce.test" target="20" />
+    </bytecodeTargetLevel>
   </component>
 </project>

@@ -5,6 +5,8 @@
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-commons/3.4.4/24bb91254820f1dd3087ae95667e9bb0a6942b23/spring-data-commons-3.4.4.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework.data/spring-data-commons/3.4.4/bb9d433c8b544086d83899975fb51e779232d51e/spring-data-commons-3.4.4-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

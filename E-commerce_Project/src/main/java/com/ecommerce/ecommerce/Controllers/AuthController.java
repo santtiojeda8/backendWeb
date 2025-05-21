@@ -1,44 +1,95 @@
 package com.ecommerce.ecommerce.Controllers;
 
 import com.ecommerce.ecommerce.Services.AuthService;
-import com.ecommerce.ecommerce.dto.AuthResponse;
-import com.ecommerce.ecommerce.dto.LoginRequest;
-import com.ecommerce.ecommerce.dto.RegisterRequest;
+import com.ecommerce.ecommerce.Services.UsuarioService;
+import com.ecommerce.ecommerce.dto.*;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.ecommerce.ecommerce.Entities.Usuario; // Importa tu entidad Usuario aquí
+import org.springframework.security.core.annotation.AuthenticationPrincipal; // Nueva importación para la opción más limpia
 
 @RestController
 @RequestMapping("/auth")
 @AllArgsConstructor
 public class AuthController {
 
-    // Inyecta el AuthService que creamos en el Paso 3. Lombok se encarga con @AllArgsConstructor.
     private final AuthService authService;
+    private final UsuarioService usuarioService;
 
-    // >>> Endpoint para Registro <<<
-    // Mapea las peticiones POST a /auth/register
     @PostMapping("/register")
-    // Recibe el cuerpo de la petición como un objeto RegisterRequest
-    public ResponseEntity<AuthResponse> register(
-            @Valid @RequestBody RegisterRequest request // <<-- AÑADIR @Valid aquí
-    ) {
-        // Llama al método register del AuthService y devuelve la respuesta con el token.
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 
-    // >>> Endpoint para Inicio de Sesión <<<
-    // Mapea las peticiones POST a /auth/login
     @PostMapping("/login")
-    // Recibe el cuerpo de la petición como un objeto LoginRequest
-    public ResponseEntity<AuthResponse> login(
-            @Valid @RequestBody LoginRequest request // <<-- AÑADIR @Valid aquí
-    ) {
-        // Llama al método login del AuthService y devuelve la respuesta con el token.
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDTO> getCurrentUser() throws Exception {
+        UserDTO currentUser = usuarioService.getCurrentUser();
+        return ResponseEntity.ok(currentUser);
+    }
+
+    // *** MÉTODO updateProfile CORREGIDO ***
+    @PutMapping("/profile")
+    // Usar @AuthenticationPrincipal es la forma más limpia y recomendada
+    public ResponseEntity<UserDTO> updateProfile(
+            @RequestBody UserProfileUpdateDTO userProfileUpdateDTO,
+            @AuthenticationPrincipal Usuario usuarioAutenticado // Spring Security inyecta tu entidad Usuario
+    ) throws Exception {
+        if (usuarioAutenticado == null) {
+            throw new IllegalStateException("No se pudo obtener el usuario autenticado.");
+        }
+
+        // Obtener el ID directamente de la entidad Usuario inyectada
+        Long userId = usuarioAutenticado.getId();
+
+        // Puedes añadir logs temporales para verificar si lo obtienes
+        System.out.println("DEBUG: ID del usuario autenticado: " + userId);
+        System.out.println("DEBUG: Username del usuario autenticado (email): " + usuarioAutenticado.getUsername());
+
+        UserDTO updatedUser = usuarioService.updateProfile(userId, userProfileUpdateDTO);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    // *** MÉTODO uploadProfileImage CORREGIDO ***
+    @PostMapping("/profile/upload-image")
+    public ResponseEntity<UserDTO> uploadProfileImage(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal Usuario usuarioAutenticado // Inyecta tu entidad Usuario
+    ) throws Exception {
+        if (usuarioAutenticado == null) {
+            throw new IllegalStateException("No se pudo obtener el usuario autenticado para subir la imagen.");
+        }
+
+        Long userId = usuarioAutenticado.getId();
+        System.out.println("DEBUG: ID del usuario autenticado para imagen: " + userId);
+
+        UserDTO updatedUser = usuarioService.uploadProfileImage(userId, file);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    // *** MÉTODO updateUserCredentials CORREGIDO ***
+    @PatchMapping("/update-credentials")
+    public ResponseEntity<UserDTO> updateUserCredentials(
+            @RequestBody UpdateCredentialsRequest request,
+            @AuthenticationPrincipal Usuario usuarioAutenticado // Inyecta tu entidad Usuario
+    ) throws Exception {
+        if (usuarioAutenticado == null) {
+            throw new IllegalStateException("No se pudo obtener el usuario autenticado para actualizar credenciales.");
+        }
+
+        Long userId = usuarioAutenticado.getId();
+        System.out.println("DEBUG: ID del usuario autenticado para credenciales: " + userId);
+
+        UserDTO updatedUser = usuarioService.updateCredentials(userId, request);
+        return ResponseEntity.ok(updatedUser);
     }
 }

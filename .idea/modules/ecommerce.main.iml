@@ -1,31 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<<<<<<< HEAD
 <module external.linked.project.id="ecommerce:main" external.linked.project.path="$MODULE_DIR$/../../E-commerce_Project" external.root.project.path="$MODULE_DIR$/../../E-commerce_Project" external.system.id="GRADLE" external.system.module.group="com.example" external.system.module.type="sourceSet" external.system.module.version="0.0.1-SNAPSHOT" type="JAVA_MODULE" version="4">
-  <component name="FacetManager">
-    <facet external-system-id="GRADLE" type="web" name="Web">
-      <configuration>
-        <webroots />
-      </configuration>
-    </facet>
-  </component>
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_20">
+  <component name="NewModuleRootManager">
     <output url="file://$MODULE_DIR$/../../E-commerce_Project/build/classes/java/main" />
     <exclude-output />
-    <content url="file://$MODULE_DIR$/../../E-commerce_Project/src/main">
-      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/src/main/resources" type="java-resource" />
-    </content>
-    <content url="file://$MODULE_DIR$/../../E-commerce_Project/src/main">
-      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/src/main/resources" type="java-resource" />
-    </content>
-    <content url="file://$MODULE_DIR$/../../E-commerce_Project/src/main">
-      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/src/main/resources" type="java-resource" />
-    </content>
-    <content url="file://$MODULE_DIR$/../../E-commerce_Project/src/main">
-      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/src/main/java" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/src/main/resources" type="java-resource" />
+    <content url="file://$MODULE_DIR$/../../E-commerce_Project/build/generated/sources/annotationProcessor/java/main">
+      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/build/generated/sources/annotationProcessor/java/main" isTestSource="false" generated="true" />
     </content>
     <content url="file://$MODULE_DIR$/../../E-commerce_Project/src/main">
       <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/src/main/java" isTestSource="false" />
@@ -109,12 +88,5 @@
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.eclipse.angus:angus-activation:2.0.2" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: org.glassfish.jaxb:txw2:4.0.5" level="project" />
     <orderEntry type="library" scope="RUNTIME" name="Gradle: com.sun.istack:istack-commons-runtime:4.1.2" level="project" />
-=======
-<module version="4">
-  <component name="AdditionalModuleElements">
-    <content url="file://$MODULE_DIR$/../../E-commerce_Project/build/generated/sources/annotationProcessor/java/main">
-      <sourceFolder url="file://$MODULE_DIR$/../../E-commerce_Project/build/generated/sources/annotationProcessor/java/main" isTestSource="false" generated="true" />
-    </content>
->>>>>>> RamaSeba
   </component>
 </module>
