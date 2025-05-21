@@ -4,40 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8a0af119-c1d2-48ff-a2d4-3e57944b3cc8" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/WebConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/DomicilioDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProfileImageDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/UpdateCredentialsRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/UserDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/UserProfileUpdateDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules/ecommerce.main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules/ecommerce.main.iml" afterDir="false" />
+    <list default="true" id="8a0af119-c1d2-48ff-a2d4-3e57944b3cc8" name="Changes" comment="&quot;UserProfile casi terminado faltan algunos toques&quot;">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/LocalidadController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/LocalidadController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProvinciaController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProvinciaController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/UsuarioController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/UsuarioController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Direccion.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Direccion.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Imagen.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Imagen.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Usuario.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Usuario.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/LocalidadRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/LocalidadRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProvinciaRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProvinciaRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/AuthService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/LocalidadService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/LocalidadService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProvinciaService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProvinciaService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/UsuarioService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/UsuarioService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/AuthResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/AuthResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/CategoriaDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/CategoriaDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ImagenDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ImagenDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDetalleDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDetalleDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,6 +16,16 @@
     <projectState path="$PROJECT_DIR$/E-commerce_Project">
       <ProjectState />
     </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <task path="$PROJECT_DIR$/E-commerce_Project/build.gradle">
+          <activation />
+        </task>
+        <projects_view />
+      </state>
+    </system>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
@@ -73,12 +51,22 @@
     &quot;assignee&quot;: &quot;SebastianASU2005&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/santtiojeda8/backendWeb.git&quot;,
-    &quot;accountId&quot;: &quot;c978bfe3-8077-448a-a8f0-a4ebdecc1d9d&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/santtiojeda8/backendWeb.git",
+    "accountId": "c978bfe3-8077-448a-a8f0-a4ebdecc1d9d"
+  },
+  "recentNewPullRequestHead": {
+    "server": {
+      "useHttp": false,
+      "host": "github.com",
+      "port": null,
+      "suffix": null
+    },
+    "owner": "santtiojeda8",
+    "repository": "backendWeb"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
 }</component>
@@ -96,7 +84,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "RamaSeba",
+    "git-widget-placeholder": "#1 on Reverting in RamaSeba",
     "ignore.virus.scanning.warn.message": "true",
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.15",
@@ -151,7 +139,31 @@
       <option name="presentableId" value="Default" />
       <updated>1747699092218</updated>
     </task>
+    <task id="LOCAL-00001" summary="&quot;UserProfile casi terminado faltan algunos toques&quot;">
+      <option name="closed" value="true" />
+      <created>1747790956942</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1747790956942</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="&quot;UserProfile casi terminado faltan algunos toques&quot;" />
+    <option name="LAST_COMMIT_MESSAGE" value="&quot;UserProfile casi terminado faltan algunos toques&quot;" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
