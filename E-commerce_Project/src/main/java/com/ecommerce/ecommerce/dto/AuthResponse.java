@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.dto;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -6,8 +7,9 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 public class AuthResponse {
     String token;
+    UserDTO user;
 }

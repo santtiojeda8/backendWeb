@@ -1,54 +1,31 @@
 package com.ecommerce.ecommerce.dto;
-import java.io.Serializable;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
 import java.util.List;
-import java.util.ArrayList; // Importar ArrayList
 
-// DTO para representar la información de una Categoria en la respuesta de la API
-public class CategoriaDTO implements Serializable {
-
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class CategoriaDTO {
     private Long id;
     private String denominacion;
-    private List<CategoriaDTO> subcategorias = new ArrayList<>(); // Lista de subcategorías DTO
+    private List<CategoriaDTO> subcategorias = new ArrayList<>(); // Soporte para subcategorías
 
-    // Constructor vacío
-    public CategoriaDTO() {
-    }
-
-    // Constructor con campos
     public CategoriaDTO(Long id, String denominacion) {
         this.id = id;
         this.denominacion = denominacion;
     }
 
-    // Getters y Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getDenominacion() {
-        return denominacion;
-    }
-
-    public void setDenominacion(String denominacion) {
-        this.denominacion = denominacion;
-    }
-
-    public List<CategoriaDTO> getSubcategorias() {
-        return subcategorias;
-    }
-
-    public void setSubcategorias(List<CategoriaDTO> subcategorias) {
-        this.subcategorias = subcategorias;
-    }
-
-    // Método para añadir subcategorías (opcional, puede ser útil al mapear)
     public void addSubcategoria(CategoriaDTO subcategoria) {
+        if (this.subcategorias == null) {
+            this.subcategorias = new ArrayList<>();
+        }
         this.subcategorias.add(subcategoria);
     }
-
-    // Opcional: Override de toString(), equals(), hashCode()
 }

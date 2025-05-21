@@ -40,6 +40,12 @@ public class SecurityConfig {
                         .requestMatchers(POST, "/auth/register").permitAll()
                         .requestMatchers(POST, "/auth/login").permitAll()
 
+                        // Permite PUT en /auth/profile (necesita autenticación)
+                        .requestMatchers(PUT, "/auth/profile").authenticated()
+
+                        // Para el GET del propio perfil (si lo usas)
+                        .requestMatchers(GET, "/auth/profile").authenticated()
+
                         // 2. Rutas de Swagger/API Docs (GET, etc.)
                         .requestMatchers(
                                 "/v2/api-docs",
@@ -53,6 +59,11 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/swagger-ui.html")
                         .permitAll()
+
+
+                        .requestMatchers("/uploads/**").permitAll()
+
+
                         // 3. Rutas de productos (GET, etc.) que no requieren autenticación
                         .requestMatchers(GET,"/productos").permitAll()
                         .requestMatchers(GET,"/productos/categorias").permitAll()
@@ -66,7 +77,7 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/productos/buscar").permitAll()
                         .requestMatchers(GET, "/categorias/**").permitAll()
                         .requestMatchers(GET, "/localidades/**").permitAll()
-                        .requestMatchers(GET, "/provincia/**").permitAll()
+                        .requestMatchers(GET, "/provincias/**").permitAll()
 
                         // 4. **ÚLTIMO Y MÁS GENERAL**: Cualquier otra solicitud REQUIERE autenticación
                         .anyRequest().authenticated()
