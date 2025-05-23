@@ -89,7 +89,7 @@ public class SecurityConfig {
 
                         // 4. **ÚLTIMO Y MÁS GENERAL**: Cualquier otra solicitud REQUIERE autenticación
                         .requestMatchers(PATCH, "/auth/update-credentials").authenticated()
-                        .anyRequest().authenticated() // <-- Esta es la regla general que atrapa todo lo demás
+                        .anyRequest().authenticated()
                 )
 
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

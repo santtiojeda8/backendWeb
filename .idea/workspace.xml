@@ -5,23 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8a0af119-c1d2-48ff-a2d4-3e57944b3cc8" name="Changes" comment="&quot;UserProfile casi terminado faltan algunos toques&quot;">
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/LocalidadDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProvinciaDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/exception/GlobalExceptionHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/exception/InvalidCurrentPasswordException.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Gradle__org_springframework_security_spring_security_core_6_4_4.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__org_springframework_security_spring_security_core_6_4_4.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/BaseController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/BaseController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/AuthController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/UsuarioController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/UsuarioController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Base.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Base.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/BaseRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/BaseRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoDetalleRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoDetalleRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/AuthService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/BaseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/BaseService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoDetalleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoDetalleService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Usuario.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Usuario.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/UsuarioRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/UsuarioRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/UsuarioService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/UsuarioService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/ApplicationConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/ApplicationConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/DomicilioDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/DomicilioDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -173,7 +165,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747791729246</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="&quot;UserProfile casi terminado faltan algunos toques&quot;">
+      <option name="closed" value="true" />
+      <created>1747958819026</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1747958819026</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

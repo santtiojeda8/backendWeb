@@ -26,6 +26,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.BadCredentialsException;
+// Nuevas importaciones necesarias para UserDetailsService
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.Collections; // Para SimpleGrantedAuthority
 
 
 import java.io.IOException;
@@ -44,7 +49,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class UsuarioService extends BaseService<Usuario,Long> {
+public class UsuarioService extends BaseService<Usuario,Long> implements UserDetailsService {
 
     private final UsuarioRepository usuarioRepository;
     private final DireccionRepository direccionRepository;
@@ -65,6 +70,49 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         this.passwordEncoder = passwordEncoder;
     }
 
+    // *** MÉTODO loadUserByUsername para la autenticación de Spring Security ***
+    @Override
+    @Transactional(readOnly = true) // Es una operación de lectura
+    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+        Usuario usuario;
+
+        // Primero intenta buscar por userName
+        Optional<Usuario> byUserName = usuarioRepository.findByUserNameAndActivoTrue(usernameOrEmail);
+
+        if (byUserName.isPresent()) {
+            usuario = byUserName.get();
+        } else {
+            // Si no se encuentra por userName, intenta buscar por email
+            Optional<Usuario> byEmail = usuarioRepository.findByEmailAndActivoTrue(usernameOrEmail);
+            if (byEmail.isPresent()) {
+                usuario = byEmail.get();
+            } else {
+                // Si no se encuentra por ninguno de los dos, el usuario no existe o no está activo
+                throw new UsernameNotFoundException("Usuario o email no encontrado o inactivo: " + usernameOrEmail);
+            }
+        }
+
+        // Ya las consultas findByUserNameAndActivoTrue y findByEmailAndActivoTrue
+        // se encargan de filtrar por activo = true. Si el usuario llega hasta aquí,
+        // es porque está activo. No obstante, una verificación explícita no está de más
+        // si se quiere un mensaje de error más específico en algún caso.
+        if (!usuario.isActivo()) {
+            // Este throw en teoría no debería alcanzarse si los findBy...AndActivoTrue funcionan correctamente,
+            // pero sirve como una capa extra de seguridad.
+            throw new UsernameNotFoundException("La cuenta del usuario está inactiva: " + usernameOrEmail);
+        }
+
+
+        // Construye y devuelve el objeto UserDetails de Spring Security
+        // Asegúrate de que el rol se mapee correctamente, ej., ROLE_ADMIN, ROLE_USER
+        return new org.springframework.security.core.userdetails.User(
+                usuario.getUsername(), // O el campo que uses como identificador principal en UserDetails (email, username)
+                usuario.getPassword(),
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name()))
+        );
+    }
+    // *** FIN MÉTODO loadUserByUsername ***
+
     @Transactional
     public UserDTO updateProfile(Long userId, UserProfileUpdateDTO updateDTO) {
         Optional<Usuario> optionalUsuario = usuarioRepository.findById(userId);
@@ -72,6 +120,11 @@ public class UsuarioService extends BaseService<Usuario,Long> {
             throw new RuntimeException("Usuario no encontrado con ID: " + userId);
         }
         Usuario usuario = optionalUsuario.get();
+
+        // Verificar si la cuenta está activa antes de permitir la actualización del perfil
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede ser modificada.");
+        }
 
         if (updateDTO.getFirstname() != null) {
             usuario.setNombre(updateDTO.getFirstname());
@@ -156,17 +209,21 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         Object principal = authentication.getPrincipal();
         if (principal instanceof UserDetails userDetails) {
             try {
+                // Intenta parsear el username como ID (si usas ID como username en UserDetails)
                 userId = Long.parseLong(userDetails.getUsername());
             } catch (NumberFormatException e) {
-                Usuario userByEmail = usuarioRepository.findByEmail(userDetails.getUsername())
-                        .orElseThrow(() -> new RuntimeException("Usuario con email " + userDetails.getUsername() + " no encontrado."));
+                // Si no es un ID, asume que es el email y busca por email
+                // *** Usar findByEmailAndActivoTrue para asegurar que la cuenta está activa ***
+                Usuario userByEmail = usuarioRepository.findByEmailAndActivoTrue(userDetails.getUsername())
+                        .orElseThrow(() -> new RuntimeException("Usuario con email " + userDetails.getUsername() + " no encontrado o inactivo."));
                 userId = userByEmail.getId();
             }
-        } else if (principal instanceof Long) {
+        } else if (principal instanceof Long) { // Si el principal ya es el ID directamente
             userId = (Long) principal;
-        } else if (principal instanceof String) {
-            Usuario userByUsername = usuarioRepository.findByUserName((String)principal)
-                    .orElseThrow(() -> new RuntimeException("Usuario con username " + (String)principal + " no encontrado."));
+        } else if (principal instanceof String) { // Si el principal es un String (ej. username)
+            // *** Usar findByUserNameAndActivoTrue para asegurar que la cuenta está activa ***
+            Usuario userByUsername = usuarioRepository.findByUserNameAndActivoTrue((String)principal)
+                    .orElseThrow(() -> new RuntimeException("Usuario con username " + (String)principal + " no encontrado o inactivo."));
             userId = userByUsername.getId();
         }
         else {
@@ -178,6 +235,15 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         final Long finalUserId = userId;
         Usuario usuario = usuarioRepository.findById(finalUserId)
                 .orElseThrow(() -> new RuntimeException("Usuario con ID " + finalUserId + " no encontrado en la base de datos."));
+
+        // *** IMPORTANTE: La verificación de estado activo ya se debería haber realizado al cargar el usuario
+        //    en loadUserByUsername si se usa JWT, o aquí si se obtiene por ID directamente después de la autenticación.
+        //    Si findById no está restringido a activos, esta línea es crucial.
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta del usuario está desactivada.");
+        }
+        // *****************************************************************************************
+
         return mapToUserDTO(usuario);
     }
 
@@ -258,6 +324,11 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         }
         Usuario usuario = optionalUsuario.get();
 
+        // Verificar si la cuenta está activa antes de permitir la subida de imagen
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede ser modificada.");
+        }
+
         String originalFilename = file.getOriginalFilename();
         String fileExtension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
@@ -301,6 +372,11 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         }
         Usuario usuario = optionalUsuario.get();
 
+        // Verificar si la cuenta está activa antes de permitir la actualización de credenciales
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede ser modificada.");
+        }
+
         if (request.getCurrentPassword() == null || request.getCurrentPassword().isEmpty()) {
             throw new IllegalArgumentException("La contraseña actual es requerida para confirmar los cambios.");
         }
@@ -313,8 +389,14 @@ public class UsuarioService extends BaseService<Usuario,Long> {
 
         // Usamos request.getNewEmail() porque tu DTO lo tiene así
         if (request.getNewEmail() != null && !request.getNewEmail().trim().isEmpty() && !request.getNewEmail().equals(usuario.getEmail())) {
+            // Antes de cambiar el email, verificar si el nuevo email ya está en uso por una cuenta ACTIVA
+            // *** Usar countByEmailAndActivoTrue para esta validación ***
+            long activeUsersWithNewEmail = usuarioRepository.countByEmailAndActivoTrue(request.getNewEmail());
+            if (activeUsersWithNewEmail > 0) {
+                throw new IllegalArgumentException("El nuevo correo electrónico ya está en uso por otra cuenta activa.");
+            }
             usuario.setEmail(request.getNewEmail());
-            usuario.setUserName(request.getNewEmail());
+            usuario.setUserName(request.getNewEmail()); // Actualizar username también si es el email
             changesMade = true;
         }
 
@@ -338,7 +420,10 @@ public class UsuarioService extends BaseService<Usuario,Long> {
 
     @Transactional(readOnly = true)
     public Optional<Usuario> findByUserName(String username) {
-        return usuarioRepository.findByUserName(username);
+        // En este contexto, si se usa findByUserName, asume que es para buscar activos para operaciones normales.
+        // Si necesitas buscar inactivos para admin, usa el método sin "AndActivoTrue" en el repositorio
+        // y maneja el estado `activo` explícitamente.
+        return usuarioRepository.findByUserNameAndActivoTrue(username);
     }
 
     @Transactional(readOnly = true)
@@ -346,8 +431,12 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         try {
             return Long.parseLong(usernameOrEmail);
         } catch (NumberFormatException e) {
-            Usuario usuario = usuarioRepository.findByEmail(usernameOrEmail)
-                    .orElseThrow(() -> new RuntimeException("Usuario con username/email " + usernameOrEmail + " no encontrado."));
+            // Al buscar por email/username para obtener el ID, también debe ser de una cuenta activa.
+            // *** Usar findByEmailAndActivoTrue o findByUserNameAndActivoTrue ***
+            Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(usernameOrEmail)
+                    .orElseGet(() -> usuarioRepository.findByUserNameAndActivoTrue(usernameOrEmail)
+                            .orElseThrow(() -> new RuntimeException("Usuario con username/email " + usernameOrEmail + " no encontrado o inactivo.")));
+
             return usuario.getId();
         }
     }
@@ -356,6 +445,10 @@ public class UsuarioService extends BaseService<Usuario,Long> {
     public List<Direccion> getDireccionesByUserId(Long userId) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+        // Opcional: Verificar si el usuario está activo antes de devolver direcciones
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("No se pueden obtener direcciones de una cuenta desactivada.");
+        }
         return List.copyOf(usuario.getDirecciones());
     }
 
@@ -363,6 +456,10 @@ public class UsuarioService extends BaseService<Usuario,Long> {
     public Direccion addDireccionToUser(Long userId, DomicilioDTO domicilioDTO) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+        // Verificar si la cuenta está activa
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede añadir direcciones.");
+        }
 
         Direccion newDireccion = new Direccion();
         newDireccion.setCalle(domicilioDTO.getCalle());
@@ -388,6 +485,10 @@ public class UsuarioService extends BaseService<Usuario,Long> {
     public Direccion updateDireccionForUser(Long userId, Long direccionId, DomicilioDTO updatedDomicilioDTO) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+        // Verificar si la cuenta está activa
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede actualizar direcciones.");
+        }
 
         Direccion existingDireccion = usuario.getDirecciones().stream()
                 .filter(d -> d.getId().equals(direccionId))
@@ -416,6 +517,10 @@ public class UsuarioService extends BaseService<Usuario,Long> {
     public void removeDireccionFromUser(Long userId, Long direccionId) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+        // Verificar si la cuenta está activa
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede eliminar direcciones.");
+        }
 
         Direccion direccionToRemove = usuario.getDirecciones().stream()
                 .filter(d -> d.getId().equals(direccionId))
@@ -424,5 +529,39 @@ public class UsuarioService extends BaseService<Usuario,Long> {
 
         usuario.removeDireccion(direccionToRemove);
         usuarioRepository.save(usuario);
+    }
+
+    // --- MÉTODO PARA DESACTIVAR LA CUENTA (MODIFICADO) ---
+    @Transactional
+    public void deactivateAccount(Long userId) {
+        Optional<Usuario> usuarioOptional = usuarioRepository.findById(userId);
+        if (usuarioOptional.isEmpty()) {
+            throw new RuntimeException("Usuario no encontrado con ID: " + userId);
+        }
+        Usuario usuario = usuarioOptional.get();
+
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta ya está desactivada.");
+        }
+
+        usuario.setActivo(false);
+        // Libera el email poniéndolo a NULL (asumiendo que tu columna 'email' permite NULL y no tiene UNIQUE)
+        usuario.setEmail(null);
+
+        // *** IMPORTANTE: Libera también el username para evitar errores de unicidad.
+        // Genera un username único para el usuario desactivado.
+        usuario.setUserName("deactivated_" + UUID.randomUUID().toString()); // Esto es más robusto
+        // Si necesitas que el username mantenga el ID, puedes usar: "deactivated_" + UUID.randomUUID().toString() + "_" + usuario.getId();
+        // Pero con el UUID solo ya es suficiente para la unicidad.
+
+        usuarioRepository.save(usuario);
+    }
+    // --- FIN MÉTODO DESACTIVAR CUENTA ---
+
+    // Este método ya estaba, solo que ahora se usa para obtener el ID de un usuario ACTIVO
+    // para las operaciones de seguridad (ej. getCurrentUser, updateProfile)
+    @Transactional(readOnly = true)
+    public Optional<Usuario> findByUserNameAndActivoTrue(String username) {
+        return usuarioRepository.findByUserNameAndActivoTrue(username);
     }
 }
