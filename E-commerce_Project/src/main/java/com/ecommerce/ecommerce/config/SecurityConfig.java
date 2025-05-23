@@ -20,6 +20,11 @@ import java.util.List;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.security.config.Customizer.withDefaults;
 
+// Importaciones para PasswordEncoder (no se usa aquí para definirlo, pero puede ser referenciado en ApplicationConfig)
+// import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+// import org.springframework.security.crypto.password.PasswordEncoder;
+
+
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -36,6 +41,9 @@ public class SecurityConfig {
                 .cors(withDefaults()) // Asegúrate de que esta configuración CORS se aplica correctamente
 
                 .authorizeHttpRequests(auth -> auth
+                        // Permitir explícitamente todas las solicitudes OPTIONS
+                        .requestMatchers(OPTIONS, "/**").permitAll() // <-- ESTO ES CLAVE para CORS preflight
+
                         // 1. **MÁS ESPECÍFICO Y PRIMERO**: Autenticación y Registro (POST)
                         .requestMatchers(POST, "/auth/register").permitAll()
                         .requestMatchers(POST, "/auth/login").permitAll()
@@ -80,10 +88,10 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/provincias/**").permitAll()
 
                         // 4. **ÚLTIMO Y MÁS GENERAL**: Cualquier otra solicitud REQUIERE autenticación
-                        .anyRequest().authenticated()
+                        .requestMatchers(PATCH, "/auth/update-credentials").authenticated()
+                        .anyRequest().authenticated() // <-- Esta es la regla general que atrapa todo lo demás
                 )
 
-                // ... (el resto de tu configuración es correcta)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -98,9 +106,9 @@ public class SecurityConfig {
         // Asegúrate de que este origen sea EXACTAMENTE el de tu frontend
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
         // Lista explícita de métodos. OPTIONS es crucial para preflight requests de CORS
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         // Permite todos los headers, incluyendo Content-Type y Authorization. Esto es importante.
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("*")); // Mejor '*' para desarrollo, o específicos como "Content-Type", "Authorization"
         // Permite credenciales (cookies, headers de autenticación). Necesario para enviar el JWT.
         configuration.setAllowCredentials(true);
 
