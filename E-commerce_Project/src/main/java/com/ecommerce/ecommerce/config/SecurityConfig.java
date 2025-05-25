@@ -20,11 +20,6 @@ import java.util.List;
 import static org.springframework.http.HttpMethod.*;
 import static org.springframework.security.config.Customizer.withDefaults;
 
-// Importaciones para PasswordEncoder (no se usa aquí para definirlo, pero puede ser referenciado en ApplicationConfig)
-// import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-// import org.springframework.security.crypto.password.PasswordEncoder;
-
-
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -38,11 +33,11 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(withDefaults()) // Asegúrate de que esta configuración CORS se aplica correctamente
+                .cors(withDefaults())
 
                 .authorizeHttpRequests(auth -> auth
                         // Permitir explícitamente todas las solicitudes OPTIONS
-                        .requestMatchers(OPTIONS, "/**").permitAll() // <-- ESTO ES CLAVE para CORS preflight
+                        .requestMatchers(OPTIONS, "/**").permitAll()
 
                         // 1. **MÁS ESPECÍFICO Y PRIMERO**: Autenticación y Registro (POST)
                         .requestMatchers(POST, "/auth/register").permitAll()
@@ -68,9 +63,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html")
                         .permitAll()
 
-
+                        // Rutas de archivos de subida
                         .requestMatchers("/uploads/**").permitAll()
-
 
                         // 3. Rutas de productos (GET, etc.) que no requieren autenticación
                         .requestMatchers(GET,"/productos").permitAll()
@@ -87,9 +81,23 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/localidades/**").permitAll()
                         .requestMatchers(GET, "/provincias/**").permitAll()
 
-                        // 4. **ÚLTIMO Y MÁS GENERAL**: Cualquier otra solicitud REQUIERE autenticación
+                        // *********************************************************************************
+                        // ¡¡¡CAMBIO CLAVE AQUÍ!!!
+                        // 4. Rutas de ProductoDetalle (GET) que no requieren autenticación
+                        // Añade estas líneas para permitir el acceso público a los endpoints de ProductoDetalle
+                        .requestMatchers(GET, "/producto_detalle/buscar").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/producto/{productoId}").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/stock-mayor-a/{stockMinimo}").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/filtrar").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/talles/{productoId}").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/colores/{productoId}").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/disponible").permitAll()
+                        // *********************************************************************************
+
+                        // 5. Cualquier otra solicitud REQUIERE autenticación
                         .requestMatchers(PATCH, "/auth/update-credentials").authenticated()
-                        .anyRequest().authenticated()
+                        .anyRequest().authenticated() // Esta debe ser la última regla
+
                 )
 
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -104,12 +112,14 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Asegúrate de que este origen sea EXACTAMENTE el de tu frontend
+        // Si usas Vite o similar, 5173 es común. Si es CRA, suele ser 3000.
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
         // Lista explícita de métodos. OPTIONS es crucial para preflight requests de CORS
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         // Permite todos los headers, incluyendo Content-Type y Authorization. Esto es importante.
-        configuration.setAllowedHeaders(Arrays.asList("*")); // Mejor '*' para desarrollo, o específicos como "Content-Type", "Authorization"
-        // Permite credenciales (cookies, headers de autenticación). Necesario para enviar el JWT.
+        // Para desarrollo, '*' está bien. Para producción, ser más específico es mejor (e.g., "Content-Type", "Authorization", "Accept").
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Permite credenciales (cookies, headers de autenticación). Necesario para enviar el JWT si lo usas en otras peticiones.
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
