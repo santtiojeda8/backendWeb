@@ -14,14 +14,14 @@ import com.ecommerce.ecommerce.dto.ImagenDTO;
 import com.ecommerce.ecommerce.dto.LocalidadDTO;
 import com.ecommerce.ecommerce.dto.ProvinciaDTO;
 // Importa el DTO de la solicitud de actualización de credenciales
-import com.ecommerce.ecommerce.dto.UpdateCredentialsRequest; // <-- ¡NUEVA IMPORTACIÓN!
+import com.ecommerce.ecommerce.dto.UpdateCredentialsRequest;
 // Importa tu excepción personalizada
-import com.ecommerce.ecommerce.exception.InvalidCurrentPasswordException; // <-- ¡NUEVA IMPORTACIÓN!
+import com.ecommerce.ecommerce.exception.InvalidCurrentPasswordException;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UsernameNotFoundException; // Para si el usuario no existe
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -154,8 +154,9 @@ public class AuthService {
                 .role(usuario.getRol())
                 .build();
 
+        // ¡CORRECCIÓN AQUÍ! Cambiar setProfileImage a setImagenUser
         if (usuario.getImagenUser() != null) {
-            userDTO.setProfileImage(mapImagenToImagenDTO(usuario.getImagenUser()));
+            userDTO.setImagenUser(mapImagenToImagenDTO(usuario.getImagenUser()));
         }
 
         if (usuario.getDirecciones() != null) {

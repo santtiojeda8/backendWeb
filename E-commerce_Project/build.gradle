@@ -45,6 +45,9 @@ dependencies {
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5' // O la última versión estable
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5' // Usar runtimeOnly porque es la implementación
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // Usar runtieOnly para la serialización/deserialización JSON (Jackson)
+
+	// --- DEPENDENCIA DE MERCADO PAGO ---
+	implementation 'com.mercadopago:sdk-java:2.1.24' // ¡Esta es la versión correcta!
 }
 
 tasks.named('test') {

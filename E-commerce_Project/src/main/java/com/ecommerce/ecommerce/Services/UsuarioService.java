@@ -1,5 +1,7 @@
 package com.ecommerce.ecommerce.Services;
 
+// ... (todas tus importaciones existentes)
+
 import com.ecommerce.ecommerce.Entities.Direccion;
 import com.ecommerce.ecommerce.Entities.Localidad;
 import com.ecommerce.ecommerce.Entities.Provincia;
@@ -47,6 +49,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 
 @Service
 public class UsuarioService extends BaseService<Usuario,Long> implements UserDetailsService {
@@ -274,7 +277,7 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
                 .telefono(usuario.getTelefono())
                 .addresses(domicilioDTOs)
                 .role(usuario.getRol())
-                .profileImage(imagenDTO)
+                .imagenUser(imagenDTO) // <--- ¡CAMBIO AQUI! profileImage -> imagenUser
                 .build();
     }
 

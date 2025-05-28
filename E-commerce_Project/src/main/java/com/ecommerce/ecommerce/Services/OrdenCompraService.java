@@ -2,85 +2,253 @@ package com.ecommerce.ecommerce.Services;
 
 import com.ecommerce.ecommerce.Entities.OrdenCompra;
 import com.ecommerce.ecommerce.Entities.OrdenCompraDetalle;
+import com.ecommerce.ecommerce.Entities.Producto;
+import com.ecommerce.ecommerce.Entities.ProductoDetalle;
+import com.ecommerce.ecommerce.Entities.Usuario;
 import com.ecommerce.ecommerce.Repositories.OrdenCompraRepository;
-import jakarta.transaction.Transactional;
+import com.ecommerce.ecommerce.Repositories.ProductoDetalleRepository;
+import com.ecommerce.ecommerce.Repositories.UsuarioRepository;
+import com.ecommerce.ecommerce.dto.OrdenCompraDTO;
+import com.ecommerce.ecommerce.dto.OrdenCompraDetalleDTO;
+import com.ecommerce.ecommerce.dto.UserDTO;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set; // Importar Set
+import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Service
 public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
 
     private final OrdenCompraRepository ordenCompraRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final ProductoDetalleRepository productoDetalleRepository;
 
-    public OrdenCompraService(OrdenCompraRepository ordenCompraRepository) {
+    public OrdenCompraService(OrdenCompraRepository ordenCompraRepository,
+                              UsuarioRepository usuarioRepository,
+                              ProductoDetalleRepository productoDetalleRepository) {
         super(ordenCompraRepository);
         this.ordenCompraRepository = ordenCompraRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.productoDetalleRepository = productoDetalleRepository;
     }
 
-    @Override
-    @Transactional // Asegura que la operación sea atómica
-    public OrdenCompra crear(OrdenCompra ordenCompra) throws Exception {
-        try {
-            if (ordenCompra.getFechaCompra() == null) {
-                ordenCompra.setFechaCompra(LocalDateTime.now());
-            }
-
-            // Validar que haya detalles antes de procesar
-            if (ordenCompra.getDetalles() == null || ordenCompra.getDetalles().isEmpty()) {
-                throw new Exception("La orden debe tener al menos un producto.");
-            }
-
-            // --- Lógica Modificada ---
-            // Iteramos sobre una copia del conjunto de detalles para evitar ConcurrentModificationException
-            // si la colección original es modificada durante la iteración (aunque addDetalle modifica la original,
-            // es más seguro iterar sobre una copia si la colección original viene de fuera).
-            // Opcional: Si estás seguro de que el Set recibido no será modificado externamente,
-            // puedes iterar directamente sobre ordenCompra.getDetalles().
-            Set<OrdenCompraDetalle> detallesOriginales = ordenCompra.getDetalles();
-            ordenCompra.setDetalles(new HashSet<>()); // Limpiamos el set original para usar addDetalle
-
-            for (OrdenCompraDetalle detalle : detallesOriginales) {
-                // Usamos el método addDetalle de la entidad OrdenCompra
-                // Este método establece la relación bidireccional (detalle.setOrdenCompra(ordenCompra))
-                // Y llama a recalcularTotal() en la orden.
-                // El subtotal del detalle se calculará automáticamente con @PrePersist
-                ordenCompra.addDetalle(detalle);
-            }
-
-            // El total de la orden ya fue calculado por addDetalle y se recalculará
-            // una última vez por el @PrePersist/@PreUpdate en la entidad OrdenCompra
-            // justo antes de guardar. No necesitamos calcularlo manualmente aquí.
-            // ordenCompra.setTotal(totalCalculado); <-- Eliminar esta línea
-
-            // La asignación de referencia de orden a cada detalle ya la hace addDetalle
-            // for (OrdenCompraDetalle detalle : ordenCompra.getDetalles()) { <-- Eliminar este bucle
-            //     detalle.setOrdenCompra(ordenCompra);
-            // }
-
-            // Guardar la orden (esto persistirá la orden y en cascada sus detalles)
-            return super.crear(ordenCompra);
-
-        } catch (Exception e) {
-            // Es buena práctica loggear la excepción original
-            // logger.error("Error al crear orden de compra", e);
-            throw new Exception("Error al crear la orden de compra: " + e.getMessage());
+    // --- Métodos de Mapeo de Entidad a DTO ---
+    public OrdenCompraDTO mapOrdenCompraToDTO(OrdenCompra ordenCompra) {
+        if (ordenCompra == null) {
+            return null;
         }
+
+        List<OrdenCompraDetalleDTO> detalleDTOs = null;
+        if (ordenCompra.getDetalles() != null) {
+            detalleDTOs = ordenCompra.getDetalles().stream()
+                    .map(this::mapOrdenCompraDetalleToDTO)
+                    .collect(Collectors.toList());
+        }
+
+        UserDTO usuarioDTO = null;
+        if (ordenCompra.getUsuario() != null) {
+            usuarioDTO = mapUsuarioToUserDTO(ordenCompra.getUsuario());
+        }
+
+        return OrdenCompraDTO.builder()
+                .id(ordenCompra.getId())
+                .total(ordenCompra.getTotal())
+                .fechaCompra(ordenCompra.getFechaCompra())
+                .direccionEnvio(ordenCompra.getDireccionEnvio())
+                .detalles(detalleDTOs)
+                .usuario(usuarioDTO)
+                .build();
     }
 
-    @Transactional // Añadir @Transactional si no está en BaseService
-    public List<OrdenCompra> obtenerPorFecha(LocalDateTime fecha) throws Exception {
+    public OrdenCompraDetalleDTO mapOrdenCompraDetalleToDTO(OrdenCompraDetalle detalle) {
+        if (detalle == null) {
+            return null;
+        }
+
+        OrdenCompraDetalleDTO.ProductoDetalleNestedDTO nestedProductoDetalleDTO = null;
+        if (detalle.getProductoDetalle() != null) {
+            ProductoDetalle pd = detalle.getProductoDetalle();
+            nestedProductoDetalleDTO = OrdenCompraDetalleDTO.ProductoDetalleNestedDTO.builder()
+                    .id(pd.getId())
+                    .precioCompra(pd.getPrecioCompra())
+                    .stockActual(pd.getStockActual())
+                    .stockMaximo(pd.getStockMaximo())
+                    .color(pd.getColor() != null ? pd.getColor().name() : null)
+                    .talle(pd.getTalle() != null ? pd.getTalle().name() : null)
+                    .productoDenominacion(pd.getProducto() != null ? pd.getProducto().getDenominacion() : null)
+                    .build();
+        }
+
+        return OrdenCompraDetalleDTO.builder()
+                .id(detalle.getId())
+                .cantidad(detalle.getCantidad())
+                .subtotal(detalle.getSubtotal())
+                .ordenCompraId(detalle.getOrdenCompra() != null ? detalle.getOrdenCompra().getId() : null)
+                .productoDetalleId(detalle.getProductoDetalle() != null ? detalle.getProductoDetalle().getId() : null)
+                .productoDetalle(nestedProductoDetalleDTO)
+                .build();
+    }
+
+    private UserDTO mapUsuarioToUserDTO(Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+        return UserDTO.builder()
+                .id(usuario.getId())
+                .firstname(usuario.getNombre())
+                .lastname(usuario.getApellido())
+                .email(usuario.getEmail())
+                .username(usuario.getUsername())
+                .build();
+    }
+
+    // --- Operaciones CRUD que devuelven DTOs ---
+
+    @Transactional(readOnly = true)
+    public List<OrdenCompraDTO> findAllDTO() throws Exception {
+        List<OrdenCompra> entities = super.listar();
+        return entities.stream()
+                .map(this::mapOrdenCompraToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public OrdenCompraDTO findByIdDTO(Long id) throws Exception {
+        // Usar buscarPorId del propio servicio (que hereda de BaseService)
+        OrdenCompra entity = super.buscarPorId(id);
+        return mapOrdenCompraToDTO(entity);
+    }
+
+    @Transactional
+    public OrdenCompra saveOrdenCompraFromDTO(OrdenCompraDTO dto) throws Exception {
+        OrdenCompra ordenCompra = new OrdenCompra();
+
+        ordenCompra.setDireccionEnvio(dto.getDireccionEnvio());
+        ordenCompra.setFechaCompra(LocalDateTime.now());
+
+        if (dto.getUsuario() != null && dto.getUsuario().getId() != null) {
+            Usuario usuario = usuarioRepository.findById(dto.getUsuario().getId())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + dto.getUsuario().getId()));
+            ordenCompra.setUsuario(usuario);
+        } else {
+            throw new Exception("Los datos del usuario (al menos el ID) son obligatorios para crear una orden de compra.");
+        }
+
+        if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
+            throw new Exception("La orden debe tener al menos un producto.");
+        }
+
+        Set<OrdenCompraDetalle> detalles = new HashSet<>();
+        double totalOrden = 0.0;
+
+        for (OrdenCompraDetalleDTO detalleDTO : dto.getDetalles()) {
+            OrdenCompraDetalle detalle = new OrdenCompraDetalle();
+            detalle.setCantidad(detalleDTO.getCantidad());
+
+            Long productoDetalleId = detalleDTO.getProductoDetalle() != null ? detalleDTO.getProductoDetalle().getId() : null;
+            if (productoDetalleId == null) {
+                throw new Exception("El ID de ProductoDetalle es obligatorio para cada detalle de orden.");
+            }
+
+            ProductoDetalle productoDetalle = productoDetalleRepository.findById(productoDetalleId)
+                    .orElseThrow(() -> new RuntimeException("Producto Detalle no encontrado con ID: " + productoDetalleId));
+
+            detalle.setProductoDetalle(productoDetalle);
+            detalle.setSubtotal(productoDetalle.getPrecioCompra() * detalle.getCantidad());
+            detalle.setOrdenCompra(ordenCompra);
+
+            detalles.add(detalle);
+            totalOrden += detalle.getSubtotal();
+        }
+
+        ordenCompra.setDetalles(detalles);
+        ordenCompra.setTotal(totalOrden);
+        ordenCompra.setActivo(true);
+
+        OrdenCompra savedOrden = super.crear(ordenCompra);
+        return savedOrden;
+    }
+
+    @Transactional
+    public OrdenCompra updateOrdenCompraFromDTO(Long id, OrdenCompraDTO dto) throws Exception {
+        // Usar buscarPorId del propio servicio (que hereda de BaseService)
+        OrdenCompra existingOrdenCompra = super.buscarPorId(id);
+
+        existingOrdenCompra.setDireccionEnvio(dto.getDireccionEnvio());
+
+        if (dto.getUsuario() != null && dto.getUsuario().getId() != null) {
+            if (existingOrdenCompra.getUsuario() == null || !existingOrdenCompra.getUsuario().getId().equals(dto.getUsuario().getId())) {
+                Usuario newUsuario = usuarioRepository.findById(dto.getUsuario().getId())
+                        .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + dto.getUsuario().getId()));
+                existingOrdenCompra.setUsuario(newUsuario);
+            }
+        }
+
+        if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
+            existingOrdenCompra.getDetalles().clear();
+        } else {
+            existingOrdenCompra.getDetalles().clear();
+
+            double totalOrden = 0.0;
+            for (OrdenCompraDetalleDTO detalleDTO : dto.getDetalles()) {
+                OrdenCompraDetalle detalle = new OrdenCompraDetalle();
+                detalle.setCantidad(detalleDTO.getCantidad());
+
+                Long productoDetalleId = detalleDTO.getProductoDetalle() != null ? detalleDTO.getProductoDetalle().getId() : null;
+                if (productoDetalleId == null) {
+                    throw new Exception("El ID de ProductoDetalle es obligatorio para cada detalle de orden.");
+                }
+
+                ProductoDetalle productoDetalle = productoDetalleRepository.findById(productoDetalleId)
+                        .orElseThrow(() -> new RuntimeException("Producto Detalle no encontrado con ID: " + productoDetalleId));
+
+                detalle.setProductoDetalle(productoDetalle);
+                detalle.setSubtotal(productoDetalle.getPrecioCompra() * detalle.getCantidad());
+                detalle.setOrdenCompra(existingOrdenCompra);
+
+                existingOrdenCompra.addDetalle(detalle);
+                totalOrden += detalle.getSubtotal();
+            }
+            existingOrdenCompra.setTotal(totalOrden);
+        }
+
+        OrdenCompra updatedOrden = super.actualizar(existingOrdenCompra);
+        return updatedOrden;
+    }
+
+    // --- Métodos Adicionales ---
+
+    @Transactional(readOnly = true)
+    public List<OrdenCompraDTO> obtenerPorFecha(LocalDateTime fecha) throws Exception {
         try {
-            return ordenCompraRepository.findAllByFechaCompra(fecha);
+            List<OrdenCompra> entities = ordenCompraRepository.findAllByFechaCompra(fecha);
+            return entities.stream()
+                    .map(this::mapOrdenCompraToDTO)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
-            // logger.error("Error al obtener ordenes por fecha", e);
             throw new Exception("Error al obtener ordenes por fecha: " + e.getMessage());
         }
     }
 
-    // Si tienes otros métodos para actualizar la orden (ej. añadir/quitar detalles después de la creación)
-    // también deberías usar addDetalle/removeDetalle en esos métodos.
+    @Transactional(readOnly = true)
+    public List<OrdenCompraDTO> obtenerPorUsuarioDTO(Long userId) throws Exception {
+        List<OrdenCompra> entities = ordenCompraRepository.findByUsuarioIdAndActivoTrue(userId);
+        if (entities.isEmpty()) {
+            throw new Exception("No se encontraron órdenes de compra activas para el usuario con ID: " + userId);
+        }
+        return entities.stream()
+                .map(this::mapOrdenCompraToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void eliminar(Long id) throws Exception {
+        super.eliminar(id);
+    }
 }

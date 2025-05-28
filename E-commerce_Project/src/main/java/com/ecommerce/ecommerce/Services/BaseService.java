@@ -1,17 +1,15 @@
 package com.ecommerce.ecommerce.Services;
 
-import com.ecommerce.ecommerce.Entities.Base; // <--- Importa tu clase Base
+import com.ecommerce.ecommerce.Entities.Base;
 import com.ecommerce.ecommerce.Repositories.BaseRepository;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.data.domain.Page; // <--- Importa Page
-import org.springframework.data.domain.Pageable; // <--- Importa Pageable
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
 
-// Asegúrate de que E extienda Base para poder usar el campo 'activo'
 public class BaseService<E extends Base, ID extends Serializable> {
 
     protected BaseRepository<E, ID> baseRepository;
@@ -20,36 +18,33 @@ public class BaseService<E extends Base, ID extends Serializable> {
         this.baseRepository = baseRepository;
     }
 
-    @Transactional(readOnly = true) // <-- Añade readOnly = true para métodos de solo lectura
+    @Transactional(readOnly = true)
     public List<E> listar() throws Exception {
         try {
-            // Ahora lista solo los elementos activos
-            return baseRepository.findAllByActivoTrue(); // <--- Cambiado
+            return baseRepository.findAllByActivoTrue();
         }catch(Exception e){
             throw new Exception("Error al listar entidades activas: " + e.getMessage());
         }
     }
 
-    @Transactional(readOnly = true) // <-- Añade readOnly = true
-    public Page<E> listar(Pageable pageable) throws Exception { // <-- Sobrecarga para paginación
+    @Transactional(readOnly = true)
+    public Page<E> listar(Pageable pageable) throws Exception {
         try {
-            // Ahora lista solo los elementos activos y paginados
-            return baseRepository.findAllByActivoTrue(pageable); // <--- Cambiado
+            return baseRepository.findAllByActivoTrue(pageable);
         }catch(Exception e){
             throw new Exception("Error al listar entidades activas paginadas: " + e.getMessage());
         }
     }
 
-    @Transactional(readOnly = true) // <-- Añade readOnly = true
-    public E buscarPorId(ID id) throws Exception { // <--- Cambiado para retornar E directamente, no Optional
+    @Transactional(readOnly = true)
+    public E buscarPorId(ID id) throws Exception {
         try {
-            // Busca por ID, pero solo si está activo
-            Optional<E> entityOptional = baseRepository.findByIdAndActivoTrue(id); // <--- Cambiado
+            // Usa findByIdAndActivoTrue que devuelve Optional
+            Optional<E> entityOptional = baseRepository.findByIdAndActivoTrue(id);
             if (entityOptional.isEmpty()) {
-                // Puedes lanzar una excepción más específica si lo deseas, como EntityNotFoundException
                 throw new Exception("Entidad no encontrada o inactiva con ID: " + id);
             }
-            return entityOptional.get();
+            return entityOptional.get(); // Retorna la entidad si está presente y activa
         }catch(Exception e){
             throw new Exception("Error al buscar entidad por ID: " + e.getMessage());
         }
@@ -58,7 +53,7 @@ public class BaseService<E extends Base, ID extends Serializable> {
     @Transactional
     public E crear(E entity) throws Exception {
         try{
-            entity.setActivo(true); // <--- Asegura que la entidad se cree como activa
+            entity.setActivo(true);
             return baseRepository.save(entity);
         }catch(Exception e){
             throw new Exception("Error al crear entidad: " + e.getMessage());
@@ -68,31 +63,33 @@ public class BaseService<E extends Base, ID extends Serializable> {
     @Transactional
     public E actualizar(E entity) throws Exception {
         try{
-            // Opcional: Asegúrate de que la entidad siga activa o si permites reactivarla
-            // Si el ID de la entidad ya existe, Spring Data JPA lo actualizará (merge)
+            // Opcional: podrías querer verificar si la entidad existe y está activa antes de actualizar
+            // Optional<E> existingEntity = baseRepository.findByIdAndActivoTrue(entity.getId());
+            // if (existingEntity.isEmpty()) {
+            //    throw new Exception("Entidad no encontrada o inactiva para actualizar con ID: " + entity.getId());
+            // }
             return baseRepository.save(entity);
         }catch(Exception e){
             throw new Exception("Error al actualizar entidad: " + e.getMessage());
         }
     }
 
-    // --- NUEVO MÉTODO PARA EL SOFT DELETE ---
     @Transactional
-    public void eliminar(ID id) throws Exception { // <--- Sobreescribe el método eliminar existente
+    public void eliminar(ID id) throws Exception {
         try{
-            Optional<E> entityOptional = baseRepository.findById(id); // Busca sin importar el estado 'activo'
+            // Aquí usamos findById normal porque queremos cambiar el estado de activo a falso
+            Optional<E> entityOptional = baseRepository.findById(id);
             if (entityOptional.isEmpty()) {
                 throw new Exception("Entidad no encontrada con ID: " + id);
             }
             E entity = entityOptional.get();
-            entity.setActivo(false); // <--- Marcar como inactivo en lugar de borrar
-            baseRepository.save(entity); // <--- Guardar el cambio
+            entity.setActivo(false); // Soft delete
+            baseRepository.save(entity);
         }catch(Exception e){
-            throw new Exception("Error al intentar eliminar lógicamente la entidad: " + e.getMessage());
+            throw  new Exception("Error al intentar eliminar lógicamente la entidad: " + e.getMessage());
         }
     }
 
-    // --- OPCIONAL: Método para reactivar una entidad ---
     @Transactional
     public E activar(ID id) throws Exception {
         try {
@@ -101,15 +98,13 @@ public class BaseService<E extends Base, ID extends Serializable> {
                 throw new Exception("Entidad no encontrada con ID: " + id);
             }
             E entity = entityOptional.get();
-            entity.setActivo(true); // Marcar como activo
+            entity.setActivo(true);
             return baseRepository.save(entity);
         } catch (Exception e) {
             throw new Exception("Error al activar entidad: " + e.getMessage());
         }
     }
 
-    // --- OPCIONAL: Método para el borrado físico (si realmente lo necesitas para algo específico) ---
-    // NO expongas este método a menos que sea absolutamente necesario y bien controlado.
     @Transactional
     public void hardDelete(ID id) throws Exception {
         try {

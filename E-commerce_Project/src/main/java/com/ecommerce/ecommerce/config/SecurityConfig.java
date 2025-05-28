@@ -17,13 +17,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.springframework.http.HttpMethod.*;
+import static org.springframework.http.HttpMethod.*; // Importa todos los métodos HTTP estáticamente
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@EnableMethodSecurity
+@EnableMethodSecurity // Permite usar @PreAuthorize en métodos de controladores
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
@@ -32,24 +32,30 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
-                .cors(withDefaults())
+                .csrf(AbstractHttpConfigurer::disable) // Deshabilita CSRF, común para APIs RESTful con JWT
+                .cors(withDefaults()) // Habilita CORS usando el bean corsConfigurationSource
 
                 .authorizeHttpRequests(auth -> auth
-                        // Permitir explícitamente todas las solicitudes OPTIONS
+                        // Permitir explícitamente todas las solicitudes OPTIONS (crucial para CORS preflight)
                         .requestMatchers(OPTIONS, "/**").permitAll()
 
-                        // 1. **MÁS ESPECÍFICO Y PRIMERO**: Autenticación y Registro (POST)
+                        // 1. Rutas de Autenticación y Registro (Públicas)
                         .requestMatchers(POST, "/auth/register").permitAll()
                         .requestMatchers(POST, "/auth/login").permitAll()
 
-                        // Permite PUT en /auth/profile (necesita autenticación)
+                        // 2. Rutas del Perfil de Usuario Autenticado (Requieren Token JWT)
+                        // Para obtener los datos del propio usuario (GET /auth/me)
+                        .requestMatchers(GET, "/auth/me").authenticated()
+                        // Para subir la imagen de perfil (POST /auth/profile/upload-image)
+                        .requestMatchers(POST, "/auth/profile/upload-image").authenticated()
+                        // Para actualizar los datos del perfil (PUT /auth/profile)
                         .requestMatchers(PUT, "/auth/profile").authenticated()
+                        // Para actualizar credenciales (PATCH /auth/update-credentials)
+                        .requestMatchers(PATCH, "/auth/update-credentials").authenticated()
+                        // Para desactivar la cuenta (DELETE /auth/deactivate)
+                        .requestMatchers(DELETE, "/auth/deactivate").authenticated()
 
-                        // Para el GET del propio perfil (si lo usas)
-                        .requestMatchers(GET, "/auth/profile").authenticated()
-
-                        // 2. Rutas de Swagger/API Docs (GET, etc.)
+                        // 3. Rutas de Swagger/API Docs (Públicas)
                         .requestMatchers(
                                 "/v2/api-docs",
                                 "/v3/api-docs",
@@ -63,10 +69,10 @@ public class SecurityConfig {
                                 "/swagger-ui.html")
                         .permitAll()
 
-                        // Rutas de archivos de subida
+                        // 4. Rutas de Archivos de Subida (Públicas, para acceder a las imágenes)
                         .requestMatchers("/uploads/**").permitAll()
 
-                        // 3. Rutas de productos (GET, etc.) que no requieren autenticación
+                        // 5. Rutas de Productos (Públicas)
                         .requestMatchers(GET,"/productos").permitAll()
                         .requestMatchers(GET,"/productos/categorias").permitAll()
                         .requestMatchers(GET,"/productos/colores").permitAll()
@@ -77,14 +83,13 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/productos/dto/promociones").permitAll()
                         .requestMatchers(GET, "/productos/dto/{id}").permitAll()
                         .requestMatchers(GET, "/productos/buscar").permitAll()
+
+                        // 6. Rutas de Categorías, Localidades, Provincias (Públicas)
                         .requestMatchers(GET, "/categorias/**").permitAll()
                         .requestMatchers(GET, "/localidades/**").permitAll()
                         .requestMatchers(GET, "/provincias/**").permitAll()
 
-                        // *********************************************************************************
-                        // ¡¡¡CAMBIO CLAVE AQUÍ!!!
-                        // 4. Rutas de ProductoDetalle (GET) que no requieren autenticación
-                        // Añade estas líneas para permitir el acceso público a los endpoints de ProductoDetalle
+                        // 7. Rutas de ProductoDetalle (Públicas)
                         .requestMatchers(GET, "/producto_detalle/buscar").permitAll()
                         .requestMatchers(GET, "/producto_detalle/producto/{productoId}").permitAll()
                         .requestMatchers(GET, "/producto_detalle/stock-mayor-a/{stockMinimo}").permitAll()
@@ -92,39 +97,37 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/producto_detalle/talles/{productoId}").permitAll()
                         .requestMatchers(GET, "/producto_detalle/colores/{productoId}").permitAll()
                         .requestMatchers(GET, "/producto_detalle/disponible").permitAll()
-                        // *********************************************************************************
 
-                        // 5. Cualquier otra solicitud REQUIERE autenticación
-                        .requestMatchers(PATCH, "/auth/update-credentials").authenticated()
-                        .anyRequest().authenticated() // Esta debe ser la última regla
-
+                        // 8. Cualquier otra solicitud REQUIERE autenticación.
+                        // Esta debe ser la ÚLTIMA regla, ya que es la más general.
+                        .anyRequest().authenticated()
                 )
-
+                // Configuración de la gestión de sesiones como Stateless (sin estado, esencial para JWT)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Asigna el AuthenticationProvider personalizado (que usa tu UserDetailsService y PasswordEncoder)
                 .authenticationProvider(authenticationProvider)
+                // Añade el filtro JWT antes del filtro de autenticación de usuario/contraseña estándar de Spring
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // CORS Configuration (parece correcta, pero la revisamos para asegurar)
+    // Bean para la configuración de CORS
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Asegúrate de que este origen sea EXACTAMENTE el de tu frontend
-        // Si usas Vite o similar, 5173 es común. Si es CRA, suele ser 3000.
+        // Permite orígenes específicos (ej. tu frontend). Asegúrate de que sea el puerto correcto.
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        // Lista explícita de métodos. OPTIONS es crucial para preflight requests de CORS
+        // Métodos HTTP permitidos para las solicitudes CORS
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        // Permite todos los headers, incluyendo Content-Type y Authorization. Esto es importante.
-        // Para desarrollo, '*' está bien. Para producción, ser más específico es mejor (e.g., "Content-Type", "Authorization", "Accept").
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        // Permite credenciales (cookies, headers de autenticación). Necesario para enviar el JWT si lo usas en otras peticiones.
+        // Encabezados permitidos en las solicitudes (importante para Content-Type y Authorization)
+        configuration.setAllowedHeaders(Arrays.asList("*")); // '*' es permisivo; considera ser más específico en producción
+        // Permite el envío de credenciales (ej. cookies, headers de autorización)
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Aplica a todas las rutas
+        // Aplica esta configuración CORS a todas las rutas (/**)
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
 }
