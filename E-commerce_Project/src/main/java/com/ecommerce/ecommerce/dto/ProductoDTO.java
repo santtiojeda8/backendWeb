@@ -22,6 +22,5 @@ public class ProductoDTO {
     private List<CategoriaDTO> categorias; // Lista de DTOs de categoría
     private List<ImagenDTO> imagenes;     // Lista de DTOs de imagen
     private List<ProductoDetalleDTO> productos_detalles; // Lista de DTOs de detalle de producto
-    // No se exponen directamente los descuentos en el ProductoDTO para el frontend,
-    // el precioFinal ya refleja el descuento.
+    private boolean activo;
 }

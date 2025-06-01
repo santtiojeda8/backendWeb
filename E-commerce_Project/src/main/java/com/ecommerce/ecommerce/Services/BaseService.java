@@ -39,12 +39,11 @@ public class BaseService<E extends Base, ID extends Serializable> {
     @Transactional(readOnly = true)
     public E buscarPorId(ID id) throws Exception {
         try {
-            // Usa findByIdAndActivoTrue que devuelve Optional
             Optional<E> entityOptional = baseRepository.findByIdAndActivoTrue(id);
             if (entityOptional.isEmpty()) {
                 throw new Exception("Entidad no encontrada o inactiva con ID: " + id);
             }
-            return entityOptional.get(); // Retorna la entidad si está presente y activa
+            return entityOptional.get();
         }catch(Exception e){
             throw new Exception("Error al buscar entidad por ID: " + e.getMessage());
         }
@@ -53,7 +52,7 @@ public class BaseService<E extends Base, ID extends Serializable> {
     @Transactional
     public E crear(E entity) throws Exception {
         try{
-            entity.setActivo(true);
+            entity.setActivo(true); // Asegurarse de que esté activo al crear
             return baseRepository.save(entity);
         }catch(Exception e){
             throw new Exception("Error al crear entidad: " + e.getMessage());
@@ -63,11 +62,6 @@ public class BaseService<E extends Base, ID extends Serializable> {
     @Transactional
     public E actualizar(E entity) throws Exception {
         try{
-            // Opcional: podrías querer verificar si la entidad existe y está activa antes de actualizar
-            // Optional<E> existingEntity = baseRepository.findByIdAndActivoTrue(entity.getId());
-            // if (existingEntity.isEmpty()) {
-            //    throw new Exception("Entidad no encontrada o inactiva para actualizar con ID: " + entity.getId());
-            // }
             return baseRepository.save(entity);
         }catch(Exception e){
             throw new Exception("Error al actualizar entidad: " + e.getMessage());
@@ -77,8 +71,7 @@ public class BaseService<E extends Base, ID extends Serializable> {
     @Transactional
     public void eliminar(ID id) throws Exception {
         try{
-            // Aquí usamos findById normal porque queremos cambiar el estado de activo a falso
-            Optional<E> entityOptional = baseRepository.findById(id);
+            Optional<E> entityOptional = baseRepository.findById(id); // Buscar incluso si está inactivo
             if (entityOptional.isEmpty()) {
                 throw new Exception("Entidad no encontrada con ID: " + id);
             }

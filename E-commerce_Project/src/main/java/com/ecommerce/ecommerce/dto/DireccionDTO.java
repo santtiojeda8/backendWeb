@@ -1,4 +1,3 @@
-// src/main/java/com/ecommerce/ecommerce/dto/DomicilioDTO.java (MODIFICAR)
 package com.ecommerce.ecommerce.dto;
 
 import lombok.AllArgsConstructor;
@@ -10,13 +9,13 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class DomicilioDTO {
+public class DireccionDTO {
     private Long id;
     private String calle;
     private int numero;
-    private String piso;
-    private String departamento;
+    private String piso; // <-- ¡NUEVO CAMPO!
+    private String departamento; // <-- ¡NUEVO CAMPO!
     private int cp;
-    private LocalidadDTO localidad; // <--- ¡CAMBIADO! Ahora es un objeto LocalidadDTO
+    private LocalidadDTO localidad;
 
 }

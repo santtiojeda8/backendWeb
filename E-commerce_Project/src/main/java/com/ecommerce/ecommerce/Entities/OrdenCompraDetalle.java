@@ -1,8 +1,11 @@
 package com.ecommerce.ecommerce.Entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder; // Añadir si OrdenCompraDetalle también usa SuperBuilder
+import lombok.experimental.SuperBuilder;
+
+import java.math.BigDecimal; // <--- ¡ASEGÚRATE DE ESTA IMPORTACIÓN!
 
 @Entity
 @Table(name = "orden_compra_detalle")
@@ -10,45 +13,44 @@ import lombok.experimental.SuperBuilder; // Añadir si OrdenCompraDetalle tambi�
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@SuperBuilder // Asegúrate de que use SuperBuilder para heredar 'activo' de Base
+@SuperBuilder
 public class OrdenCompraDetalle extends Base {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_compra_id")
+    @JsonBackReference("ordenCompra-detalles")
     private OrdenCompra ordenCompra;
 
-    // --- CAMBIO CLAVE: Usa ProductoDetalle, NO Producto ---
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "productodetalle_id") // Columna FK a ProductoDetalle
-    private ProductoDetalle productoDetalle; // Campo que mapea a ProductoDetalle
-    // --- FIN CAMBIO CLAVE ---
+    @JoinColumn(name = "productodetalle_id")
+    private ProductoDetalle productoDetalle;
 
     @Column(name = "cantidad")
     private Integer cantidad;
 
-    @Column(name = "subtotal")
-    private Double subtotal;
+    @Column(name = "precio_unitario", precision = 10, scale = 2)
+    private BigDecimal precioUnitario; // <--- ¡DEBE SER BIGDECIMAL!
 
-    // Método para calcular el subtotal (ahora usando productoDetalle.getPrecioCompra())
-    public Double calcularSubtotal() {
-        if (this.productoDetalle != null && this.productoDetalle.getPrecioCompra() != null && this.cantidad != null) {
-            // Usa getPrecioCompra() de ProductoDetalle
-            return this.productoDetalle.getPrecioCompra() * this.cantidad;
+    @Column(name = "subtotal", precision = 10, scale = 2)
+    private BigDecimal subtotal; // <--- ¡DEBE SER BIGDECIMAL!
+
+    // --- CORRECCIÓN CLAVE AQUÍ ---
+    // Este método asegura que el subtotal se calcule correctamente en la entidad
+    public BigDecimal calcularSubtotal() {
+        if (this.precioUnitario != null && this.cantidad != null) {
+            return this.precioUnitario.multiply(new BigDecimal(this.cantidad));
         }
-        return 0.0;
+        return BigDecimal.ZERO;
     }
 
     @PrePersist
-    public void prePersist() {
-        this.subtotal = calcularSubtotal();
-    }
-
     @PreUpdate
-    public void preUpdate() {
+    public void prePersistAndUpdate() {
         this.subtotal = calcularSubtotal();
+        // Asegurarse de que precioUnitario no sea null antes de calcular
+        // (ya lo validamos en calcularSubtotal, pero es una buena práctica)
+        if (this.precioUnitario == null && this.productoDetalle != null && this.productoDetalle.getPrecioCompra() != null) {
+            this.precioUnitario = this.productoDetalle.getPrecioCompra();
+        }
     }
-
-    // Asegurarte de que estos getters/setters estén disponibles (Lombok los genera si @Getter/@Setter está presente)
-    // public ProductoDetalle getProductoDetalle() { return productoDetalle; }
-    // public void setProductoDetalle(ProductoDetalle productoDetalle) { this.productoDetalle = productoDetalle; }
 }

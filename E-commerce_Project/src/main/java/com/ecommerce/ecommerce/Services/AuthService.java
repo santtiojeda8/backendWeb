@@ -9,7 +9,7 @@ import com.ecommerce.ecommerce.dto.AuthResponse;
 import com.ecommerce.ecommerce.dto.LoginRequest;
 import com.ecommerce.ecommerce.dto.RegisterRequest;
 import com.ecommerce.ecommerce.dto.UserDTO;
-import com.ecommerce.ecommerce.dto.DomicilioDTO;
+import com.ecommerce.ecommerce.dto.DireccionDTO;
 import com.ecommerce.ecommerce.dto.ImagenDTO;
 import com.ecommerce.ecommerce.dto.LocalidadDTO;
 import com.ecommerce.ecommerce.dto.ProvinciaDTO;
@@ -168,7 +168,7 @@ public class AuthService {
         return userDTO;
     }
 
-    private DomicilioDTO mapDireccionToDomicilioDTO(Direccion direccion) {
+    private DireccionDTO mapDireccionToDomicilioDTO(Direccion direccion) {
         if (direccion == null) {
             return null;
         }
@@ -189,7 +189,7 @@ public class AuthService {
                     .build();
         }
 
-        return DomicilioDTO.builder()
+        return DireccionDTO.builder()
                 .id(direccion.getId())
                 .calle(direccion.getCalle())
                 .numero(direccion.getNumero())

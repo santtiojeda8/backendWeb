@@ -4,13 +4,12 @@ package com.ecommerce.ecommerce.Services;
 
 import com.ecommerce.ecommerce.Entities.Direccion;
 import com.ecommerce.ecommerce.Entities.Localidad;
-import com.ecommerce.ecommerce.Entities.Provincia;
 import com.ecommerce.ecommerce.Entities.Usuario;
 import com.ecommerce.ecommerce.Entities.Imagen;
 import com.ecommerce.ecommerce.Repositories.UsuarioRepository;
 import com.ecommerce.ecommerce.Repositories.DireccionRepository;
 import com.ecommerce.ecommerce.Repositories.LocalidadRepository;
-import com.ecommerce.ecommerce.dto.DomicilioDTO;
+import com.ecommerce.ecommerce.dto.DireccionDTO;
 import com.ecommerce.ecommerce.dto.ImagenDTO;
 import com.ecommerce.ecommerce.dto.LocalidadDTO;
 import com.ecommerce.ecommerce.dto.ProvinciaDTO;
@@ -18,9 +17,10 @@ import com.ecommerce.ecommerce.dto.UpdateCredentialsRequest;
 import com.ecommerce.ecommerce.dto.UserDTO;
 import com.ecommerce.ecommerce.dto.UserProfileUpdateDTO;
 
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Transactional; // <-- ¡Usar esta importación para @Transactional!
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -28,11 +28,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.authentication.BadCredentialsException;
-// Nuevas importaciones necesarias para UserDetailsService
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import java.util.Collections; // Para SimpleGrantedAuthority
+import java.util.Collections;
 
 
 import java.io.IOException;
@@ -40,9 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -73,48 +70,34 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         this.passwordEncoder = passwordEncoder;
     }
 
-    // *** MÉTODO loadUserByUsername para la autenticación de Spring Security ***
     @Override
-    @Transactional(readOnly = true) // Es una operación de lectura
+    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
         Usuario usuario;
 
-        // Primero intenta buscar por userName
         Optional<Usuario> byUserName = usuarioRepository.findByUserNameAndActivoTrue(usernameOrEmail);
 
         if (byUserName.isPresent()) {
             usuario = byUserName.get();
         } else {
-            // Si no se encuentra por userName, intenta buscar por email
             Optional<Usuario> byEmail = usuarioRepository.findByEmailAndActivoTrue(usernameOrEmail);
             if (byEmail.isPresent()) {
                 usuario = byEmail.get();
             } else {
-                // Si no se encuentra por ninguno de los dos, el usuario no existe o no está activo
                 throw new UsernameNotFoundException("Usuario o email no encontrado o inactivo: " + usernameOrEmail);
             }
         }
 
-        // Ya las consultas findByUserNameAndActivoTrue y findByEmailAndActivoTrue
-        // se encargan de filtrar por activo = true. Si el usuario llega hasta aquí,
-        // es porque está activo. No obstante, una verificación explícita no está de más
-        // si se quiere un mensaje de error más específico en algún caso.
         if (!usuario.isActivo()) {
-            // Este throw en teoría no debería alcanzarse si los findBy...AndActivoTrue funcionan correctamente,
-            // pero sirve como una capa extra de seguridad.
             throw new UsernameNotFoundException("La cuenta del usuario está inactiva: " + usernameOrEmail);
         }
 
-
-        // Construye y devuelve el objeto UserDetails de Spring Security
-        // Asegúrate de que el rol se mapee correctamente, ej., ROLE_ADMIN, ROLE_USER
         return new org.springframework.security.core.userdetails.User(
-                usuario.getUsername(), // O el campo que uses como identificador principal en UserDetails (email, username)
+                usuario.getUsername(),
                 usuario.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name()))
         );
     }
-    // *** FIN MÉTODO loadUserByUsername ***
 
     @Transactional
     public UserDTO updateProfile(Long userId, UserProfileUpdateDTO updateDTO) {
@@ -124,7 +107,6 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         }
         Usuario usuario = optionalUsuario.get();
 
-        // Verificar si la cuenta está activa antes de permitir la actualización del perfil
         if (!usuario.isActivo()) {
             throw new RuntimeException("La cuenta está desactivada y no puede ser modificada.");
         }
@@ -144,9 +126,11 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         }
 
         if (updateDTO.getAddresses() != null) {
+            Hibernate.initialize(usuario.getDirecciones()); // Asegurar que las direcciones estén cargadas
+
             Set<Direccion> direccionesEnviadasYActualizadas = new HashSet<>();
 
-            for (DomicilioDTO dtoAddress : updateDTO.getAddresses()) {
+            for (DireccionDTO dtoAddress : updateDTO.getAddresses()) {
                 Direccion currentAddressEntity;
 
                 if (dtoAddress.getId() != null) {
@@ -195,6 +179,7 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
             }
 
         } else if (updateDTO.getAddresses() != null && updateDTO.getAddresses().isEmpty()) {
+            Hibernate.initialize(usuario.getDirecciones());
             usuario.getDirecciones().clear();
         }
 
@@ -212,24 +197,19 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         Object principal = authentication.getPrincipal();
         if (principal instanceof UserDetails userDetails) {
             try {
-                // Intenta parsear el username como ID (si usas ID como username en UserDetails)
                 userId = Long.parseLong(userDetails.getUsername());
             } catch (NumberFormatException e) {
-                // Si no es un ID, asume que es el email y busca por email
-                // *** Usar findByEmailAndActivoTrue para asegurar que la cuenta está activa ***
                 Usuario userByEmail = usuarioRepository.findByEmailAndActivoTrue(userDetails.getUsername())
                         .orElseThrow(() -> new RuntimeException("Usuario con email " + userDetails.getUsername() + " no encontrado o inactivo."));
                 userId = userByEmail.getId();
             }
-        } else if (principal instanceof Long) { // Si el principal ya es el ID directamente
+        } else if (principal instanceof Long) {
             userId = (Long) principal;
-        } else if (principal instanceof String) { // Si el principal es un String (ej. username)
-            // *** Usar findByUserNameAndActivoTrue para asegurar que la cuenta está activa ***
+        } else if (principal instanceof String) {
             Usuario userByUsername = usuarioRepository.findByUserNameAndActivoTrue((String)principal)
                     .orElseThrow(() -> new RuntimeException("Usuario con username " + (String)principal + " no encontrado o inactivo."));
             userId = userByUsername.getId();
-        }
-        else {
+        } else {
             throw new IllegalStateException("Formato de principal de seguridad no soportado. No se pudo obtener el ID del usuario.");
         }
         if (userId == null) {
@@ -239,32 +219,33 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         Usuario usuario = usuarioRepository.findById(finalUserId)
                 .orElseThrow(() -> new RuntimeException("Usuario con ID " + finalUserId + " no encontrado en la base de datos."));
 
-        // *** IMPORTANTE: La verificación de estado activo ya se debería haber realizado al cargar el usuario
-        //    en loadUserByUsername si se usa JWT, o aquí si se obtiene por ID directamente después de la autenticación.
-        //    Si findById no está restringido a activos, esta línea es crucial.
         if (!usuario.isActivo()) {
             throw new RuntimeException("La cuenta del usuario está desactivada.");
         }
-        // *****************************************************************************************
 
         return mapToUserDTO(usuario);
     }
 
-
+    @Transactional(readOnly = true)
     public UserDTO mapToUserDTO(Usuario usuario) {
         if (usuario == null) {
             return null;
         }
-        List<DomicilioDTO> domicilioDTOs = null;
+
+        List<DireccionDTO> direccionDTOS = null;
         if (usuario.getDirecciones() != null) {
-            domicilioDTOs = usuario.getDirecciones().stream()
+            Hibernate.initialize(usuario.getDirecciones());
+            direccionDTOS = usuario.getDirecciones().stream()
                     .map(this::mapToDomicilioDTO)
                     .collect(Collectors.toList());
         }
+
         ImagenDTO imagenDTO = null;
         if (usuario.getImagenUser() != null) {
+            Hibernate.initialize(usuario.getImagenUser());
             imagenDTO = mapToImagenDTO(usuario.getImagenUser());
         }
+
         return UserDTO.builder()
                 .id(usuario.getId())
                 .username(usuario.getUsername())
@@ -275,26 +256,38 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
                 .sexo(usuario.getSexo())
                 .fechaNacimiento(usuario.getFechaNacimiento())
                 .telefono(usuario.getTelefono())
-                .addresses(domicilioDTOs)
+                .addresses(direccionDTOS)
                 .role(usuario.getRol())
-                .imagenUser(imagenDTO) // <--- ¡CAMBIO AQUI! profileImage -> imagenUser
+                .imagenUser(imagenDTO)
                 .build();
     }
 
-    public DomicilioDTO mapToDomicilioDTO(Direccion direccion) {
+    @Transactional(readOnly = true)
+    public DireccionDTO mapToDomicilioDTO(Direccion direccion) {
         if (direccion == null) {
             return null;
         }
+
         LocalidadDTO localidadDTO = null;
         if (direccion.getLocalidad() != null) {
+            Hibernate.initialize(direccion.getLocalidad());
+
             ProvinciaDTO provinciaDTO = null;
             if (direccion.getLocalidad().getProvincia() != null) {
-                provinciaDTO = new ProvinciaDTO(direccion.getLocalidad().getProvincia().getId(), direccion.getLocalidad().getProvincia().getNombre());
+                Hibernate.initialize(direccion.getLocalidad().getProvincia());
+                provinciaDTO = ProvinciaDTO.builder()
+                        .id(direccion.getLocalidad().getProvincia().getId())
+                        .nombre(direccion.getLocalidad().getProvincia().getNombre())
+                        .build();
             }
-            localidadDTO = new LocalidadDTO(direccion.getLocalidad().getId(), direccion.getLocalidad().getNombre(), provinciaDTO);
+            localidadDTO = LocalidadDTO.builder()
+                    .id(direccion.getLocalidad().getId())
+                    .nombre(direccion.getLocalidad().getNombre())
+                    .provincia(provinciaDTO)
+                    .build();
         }
 
-        return DomicilioDTO.builder()
+        return DireccionDTO.builder()
                 .id(direccion.getId())
                 .calle(direccion.getCalle())
                 .numero(direccion.getNumero())
@@ -327,7 +320,6 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         }
         Usuario usuario = optionalUsuario.get();
 
-        // Verificar si la cuenta está activa antes de permitir la subida de imagen
         if (!usuario.isActivo()) {
             throw new RuntimeException("La cuenta está desactivada y no puede ser modificada.");
         }
@@ -375,7 +367,6 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         }
         Usuario usuario = optionalUsuario.get();
 
-        // Verificar si la cuenta está activa antes de permitir la actualización de credenciales
         if (!usuario.isActivo()) {
             throw new RuntimeException("La cuenta está desactivada y no puede ser modificada.");
         }
@@ -390,16 +381,13 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
 
         boolean changesMade = false;
 
-        // Usamos request.getNewEmail() porque tu DTO lo tiene así
         if (request.getNewEmail() != null && !request.getNewEmail().trim().isEmpty() && !request.getNewEmail().equals(usuario.getEmail())) {
-            // Antes de cambiar el email, verificar si el nuevo email ya está en uso por una cuenta ACTIVA
-            // *** Usar countByEmailAndActivoTrue para esta validación ***
             long activeUsersWithNewEmail = usuarioRepository.countByEmailAndActivoTrue(request.getNewEmail());
             if (activeUsersWithNewEmail > 0) {
                 throw new IllegalArgumentException("El nuevo correo electrónico ya está en uso por otra cuenta activa.");
             }
             usuario.setEmail(request.getNewEmail());
-            usuario.setUserName(request.getNewEmail()); // Actualizar username también si es el email
+            usuario.setUserName(request.getNewEmail());
             changesMade = true;
         }
 
@@ -421,21 +409,19 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         return mapToUserDTO(savedUsuario);
     }
 
+    // Este método ya lo tenías, solo que ahora se usa para obtener el ID de un usuario ACTIVO
+    // para las operaciones de seguridad (ej. getCurrentUser, updateProfile)
     @Transactional(readOnly = true)
-    public Optional<Usuario> findByUserName(String username) {
-        // En este contexto, si se usa findByUserName, asume que es para buscar activos para operaciones normales.
-        // Si necesitas buscar inactivos para admin, usa el método sin "AndActivoTrue" en el repositorio
-        // y maneja el estado `activo` explícitamente.
+    public Optional<Usuario> findByUserNameAndActivoTrue(String username) {
         return usuarioRepository.findByUserNameAndActivoTrue(username);
     }
 
+    // Este es el método que debe ser único y lo usamos para obtener el ID del usuario autenticado.
     @Transactional(readOnly = true)
     public Long getUserIdByUsernameOrEmail(String usernameOrEmail) {
         try {
             return Long.parseLong(usernameOrEmail);
         } catch (NumberFormatException e) {
-            // Al buscar por email/username para obtener el ID, también debe ser de una cuenta activa.
-            // *** Usar findByEmailAndActivoTrue o findByUserNameAndActivoTrue ***
             Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(usernameOrEmail)
                     .orElseGet(() -> usuarioRepository.findByUserNameAndActivoTrue(usernameOrEmail)
                             .orElseThrow(() -> new RuntimeException("Usuario con username/email " + usernameOrEmail + " no encontrado o inactivo.")));
@@ -448,32 +434,32 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
     public List<Direccion> getDireccionesByUserId(Long userId) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
-        // Opcional: Verificar si el usuario está activo antes de devolver direcciones
+
         if (!usuario.isActivo()) {
             throw new RuntimeException("No se pueden obtener direcciones de una cuenta desactivada.");
         }
-        return List.copyOf(usuario.getDirecciones());
+        Hibernate.initialize(usuario.getDirecciones());
+        return new ArrayList<>(usuario.getDirecciones());
     }
 
     @Transactional
-    public Direccion addDireccionToUser(Long userId, DomicilioDTO domicilioDTO) {
+    public Direccion addDireccionToUser(Long userId, DireccionDTO direccionDTO) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
-        // Verificar si la cuenta está activa
         if (!usuario.isActivo()) {
             throw new RuntimeException("La cuenta está desactivada y no puede añadir direcciones.");
         }
 
         Direccion newDireccion = new Direccion();
-        newDireccion.setCalle(domicilioDTO.getCalle());
-        newDireccion.setNumero(domicilioDTO.getNumero());
-        newDireccion.setPiso(domicilioDTO.getPiso());
-        newDireccion.setDepartamento(domicilioDTO.getDepartamento());
-        newDireccion.setCp(domicilioDTO.getCp());
+        newDireccion.setCalle(direccionDTO.getCalle());
+        newDireccion.setNumero(direccionDTO.getNumero());
+        newDireccion.setPiso(direccionDTO.getPiso());
+        newDireccion.setDepartamento(direccionDTO.getDepartamento());
+        newDireccion.setCp(direccionDTO.getCp());
 
-        if (domicilioDTO.getLocalidad() != null && domicilioDTO.getLocalidad().getId() != null) {
-            Localidad localidad = localidadRepository.findById(domicilioDTO.getLocalidad().getId())
-                    .orElseThrow(() -> new RuntimeException("Localidad con ID " + domicilioDTO.getLocalidad().getId() + " no encontrada."));
+        if (direccionDTO.getLocalidad() != null && direccionDTO.getLocalidad().getId() != null) {
+            Localidad localidad = localidadRepository.findById(direccionDTO.getLocalidad().getId())
+                    .orElseThrow(() -> new RuntimeException("Localidad con ID " + direccionDTO.getLocalidad().getId() + " no encontrada."));
             newDireccion.setLocalidad(localidad);
         } else {
             throw new IllegalArgumentException("La dirección debe tener una Localidad válida con ID.");
@@ -485,28 +471,29 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
     }
 
     @Transactional
-    public Direccion updateDireccionForUser(Long userId, Long direccionId, DomicilioDTO updatedDomicilioDTO) {
+    public Direccion updateDireccionForUser(Long userId, Long direccionId, DireccionDTO updatedDireccionDTO) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
-        // Verificar si la cuenta está activa
         if (!usuario.isActivo()) {
             throw new RuntimeException("La cuenta está desactivada y no puede actualizar direcciones.");
         }
+
+        Hibernate.initialize(usuario.getDirecciones());
 
         Direccion existingDireccion = usuario.getDirecciones().stream()
                 .filter(d -> d.getId().equals(direccionId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Dirección no encontrada con ID: " + direccionId + " para el usuario " + userId));
 
-        existingDireccion.setCalle(updatedDomicilioDTO.getCalle());
-        existingDireccion.setNumero(updatedDomicilioDTO.getNumero());
-        existingDireccion.setPiso(updatedDomicilioDTO.getPiso());
-        existingDireccion.setDepartamento(updatedDomicilioDTO.getDepartamento());
-        existingDireccion.setCp(updatedDomicilioDTO.getCp());
+        existingDireccion.setCalle(updatedDireccionDTO.getCalle());
+        existingDireccion.setNumero(updatedDireccionDTO.getNumero());
+        existingDireccion.setPiso(updatedDireccionDTO.getPiso());
+        existingDireccion.setDepartamento(updatedDireccionDTO.getDepartamento());
+        existingDireccion.setCp(updatedDireccionDTO.getCp());
 
-        if (updatedDomicilioDTO.getLocalidad() != null && updatedDomicilioDTO.getLocalidad().getId() != null) {
-            Localidad localidad = localidadRepository.findById(updatedDomicilioDTO.getLocalidad().getId())
-                    .orElseThrow(() -> new RuntimeException("Localidad con ID " + updatedDomicilioDTO.getLocalidad().getId() + " no encontrada."));
+        if (updatedDireccionDTO.getLocalidad() != null && updatedDireccionDTO.getLocalidad().getId() != null) {
+            Localidad localidad = localidadRepository.findById(updatedDireccionDTO.getLocalidad().getId())
+                    .orElseThrow(() -> new RuntimeException("Localidad con ID " + updatedDireccionDTO.getLocalidad().getId() + " no encontrada."));
             existingDireccion.setLocalidad(localidad);
         } else {
             throw new IllegalArgumentException("La dirección debe tener una Localidad válida con ID.");
@@ -520,10 +507,11 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
     public void removeDireccionFromUser(Long userId, Long direccionId) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
-        // Verificar si la cuenta está activa
         if (!usuario.isActivo()) {
             throw new RuntimeException("La cuenta está desactivada y no puede eliminar direcciones.");
         }
+
+        Hibernate.initialize(usuario.getDirecciones());
 
         Direccion direccionToRemove = usuario.getDirecciones().stream()
                 .filter(d -> d.getId().equals(direccionId))
@@ -534,7 +522,6 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         usuarioRepository.save(usuario);
     }
 
-    // --- MÉTODO PARA DESACTIVAR LA CUENTA (MODIFICADO) ---
     @Transactional
     public void deactivateAccount(Long userId) {
         Optional<Usuario> usuarioOptional = usuarioRepository.findById(userId);
@@ -548,23 +535,9 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         }
 
         usuario.setActivo(false);
-        // Libera el email poniéndolo a NULL (asumiendo que tu columna 'email' permite NULL y no tiene UNIQUE)
         usuario.setEmail(null);
-
-        // *** IMPORTANTE: Libera también el username para evitar errores de unicidad.
-        // Genera un username único para el usuario desactivado.
-        usuario.setUserName("deactivated_" + UUID.randomUUID().toString()); // Esto es más robusto
-        // Si necesitas que el username mantenga el ID, puedes usar: "deactivated_" + UUID.randomUUID().toString() + "_" + usuario.getId();
-        // Pero con el UUID solo ya es suficiente para la unicidad.
+        usuario.setUserName("deactivated_" + UUID.randomUUID().toString());
 
         usuarioRepository.save(usuario);
-    }
-    // --- FIN MÉTODO DESACTIVAR CUENTA ---
-
-    // Este método ya estaba, solo que ahora se usa para obtener el ID de un usuario ACTIVO
-    // para las operaciones de seguridad (ej. getCurrentUser, updateProfile)
-    @Transactional(readOnly = true)
-    public Optional<Usuario> findByUserNameAndActivoTrue(String username) {
-        return usuarioRepository.findByUserNameAndActivoTrue(username);
     }
 }

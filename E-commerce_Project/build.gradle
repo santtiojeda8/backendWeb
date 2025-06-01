@@ -47,7 +47,7 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5' // Usar runtieOnly para la serialización/deserialización JSON (Jackson)
 
 	// --- DEPENDENCIA DE MERCADO PAGO ---
-	implementation 'com.mercadopago:sdk-java:2.1.24' // ¡Esta es la versión correcta!
+	implementation 'com.mercadopago:sdk-java:2.4.0' // ¡Esta es la versión correcta!
 }
 
 tasks.named('test') {

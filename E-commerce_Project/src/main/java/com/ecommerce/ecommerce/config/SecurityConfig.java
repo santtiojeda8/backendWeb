@@ -17,13 +17,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.springframework.http.HttpMethod.*; // Importa todos los métodos HTTP estáticamente
+import static org.springframework.http.HttpMethod.*;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
-@EnableMethodSecurity // Permite usar @PreAuthorize en métodos de controladores
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
@@ -32,27 +32,32 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // Deshabilita CSRF, común para APIs RESTful con JWT
-                .cors(withDefaults()) // Habilita CORS usando el bean corsConfigurationSource
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(withDefaults())
 
                 .authorizeHttpRequests(auth -> auth
-                        // Permitir explícitamente todas las solicitudes OPTIONS (crucial para CORS preflight)
                         .requestMatchers(OPTIONS, "/**").permitAll()
 
                         // 1. Rutas de Autenticación y Registro (Públicas)
                         .requestMatchers(POST, "/auth/register").permitAll()
                         .requestMatchers(POST, "/auth/login").permitAll()
 
+                        // --- REGLA CORREGIDA PARA MERCADO PAGO ---
+                        // Permite la creación de preferencias de Mercado Pago para todos (público)
+                        .requestMatchers(POST, "/api/mercadopago/create-preference").permitAll() // <-- CAMBIO AQUÍ
+                        // Si tienes un endpoint para recibir webhooks de MP, también debería ser público:
+                        .requestMatchers(POST, "/api/mercadopago/webhook").permitAll() // <-- ASUMIENDO /api/
+                        // Si tienes un endpoint para actualizar el estado de la orden DESDE EL FRONTEND
+                        // tras el retorno de MP, también podría ser público o requerir autenticación
+                        // si solo los usuarios logueados pueden ver sus órdenes:
+                        .requestMatchers(POST, "/api/ordenes/{id}/actualizar-estado-pago").permitAll() // <-- ASUMIENDO /api/
+                        // ------------------------------------
+
                         // 2. Rutas del Perfil de Usuario Autenticado (Requieren Token JWT)
-                        // Para obtener los datos del propio usuario (GET /auth/me)
                         .requestMatchers(GET, "/auth/me").authenticated()
-                        // Para subir la imagen de perfil (POST /auth/profile/upload-image)
                         .requestMatchers(POST, "/auth/profile/upload-image").authenticated()
-                        // Para actualizar los datos del perfil (PUT /auth/profile)
                         .requestMatchers(PUT, "/auth/profile").authenticated()
-                        // Para actualizar credenciales (PATCH /auth/update-credentials)
                         .requestMatchers(PATCH, "/auth/update-credentials").authenticated()
-                        // Para desactivar la cuenta (DELETE /auth/deactivate)
                         .requestMatchers(DELETE, "/auth/deactivate").authenticated()
 
                         // 3. Rutas de Swagger/API Docs (Públicas)
@@ -78,7 +83,7 @@ public class SecurityConfig {
                         .requestMatchers(GET,"/productos/colores").permitAll()
                         .requestMatchers(GET,"/productos/talles").permitAll()
                         .requestMatchers(GET,"/productos/filtrar").permitAll()
-                        .requestMatchers(POST,"/productos/filtrar").permitAll() // Si /productos/filtrar es POST público
+                        .requestMatchers(POST,"/productos/filtrar").permitAll()
                         .requestMatchers(GET, "/productos/dto").permitAll()
                         .requestMatchers(GET, "/productos/dto/promociones").permitAll()
                         .requestMatchers(GET, "/productos/dto/{id}").permitAll()
@@ -99,34 +104,24 @@ public class SecurityConfig {
                         .requestMatchers(GET, "/producto_detalle/disponible").permitAll()
 
                         // 8. Cualquier otra solicitud REQUIERE autenticación.
-                        // Esta debe ser la ÚLTIMA regla, ya que es la más general.
                         .anyRequest().authenticated()
                 )
-                // Configuración de la gestión de sesiones como Stateless (sin estado, esencial para JWT)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Asigna el AuthenticationProvider personalizado (que usa tu UserDetailsService y PasswordEncoder)
                 .authenticationProvider(authenticationProvider)
-                // Añade el filtro JWT antes del filtro de autenticación de usuario/contraseña estándar de Spring
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // Bean para la configuración de CORS
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permite orígenes específicos (ej. tu frontend). Asegúrate de que sea el puerto correcto.
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        // Métodos HTTP permitidos para las solicitudes CORS
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173","https://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        // Encabezados permitidos en las solicitudes (importante para Content-Type y Authorization)
-        configuration.setAllowedHeaders(Arrays.asList("*")); // '*' es permisivo; considera ser más específico en producción
-        // Permite el envío de credenciales (ej. cookies, headers de autorización)
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // Aplica esta configuración CORS a todas las rutas (/**)
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }

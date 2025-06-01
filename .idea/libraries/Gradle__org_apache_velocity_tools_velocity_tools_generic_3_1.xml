@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.velocity.tools:velocity-tools-generic:3.1" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="org.apache.velocity.tools" artifactId="velocity-tools-generic" version="3.1" baseVersion="3.1" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.velocity.tools/velocity-tools-generic/3.1/7aaa49086a64cd9dab967a8437cc03abbfad655/velocity-tools-generic-3.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,6 +1,6 @@
 package com.ecommerce.ecommerce.Entities;
 
-import jakarta.persistence.Column; // <-- Añade esta importación
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -9,7 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder; // Asegúrate de que esta importación exista
+import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
 
@@ -25,7 +25,7 @@ public abstract class Base implements Serializable {
     protected Long id;
 
     // Nuevo atributo para el borrado lógico (soft delete)
-    @Column(name = "activo") // Opcional: define el nombre de la columna en la BD
-    @Builder.Default // Para que el valor por defecto sea 'true' al construir con @SuperBuilder
-    protected boolean activo = true;
+    @Column(name = "activo")
+    @Builder.Default
+    protected boolean activo = true; // Por defecto es activo
 }

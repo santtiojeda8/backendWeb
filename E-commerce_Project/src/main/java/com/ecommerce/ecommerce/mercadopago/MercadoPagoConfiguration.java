@@ -1,36 +1,48 @@
 package com.ecommerce.ecommerce.mercadopago;
 
 import com.mercadopago.MercadoPagoConfig;
-import jakarta.annotation.PostConstruct; // Para que Spring ejecute este método después de la inyección de dependencias
-import org.springframework.beans.factory.annotation.Value; // Para inyectar valores de application.properties
-import org.springframework.context.annotation.Configuration; // Para que Spring reconozca esta clase como configuración
+import com.mercadopago.client.payment.PaymentClient;
+import com.mercadopago.client.preference.PreferenceClient;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@Configuration // Indica a Spring que esta clase contiene definiciones de beans o configuraciones
+@Configuration
 public class MercadoPagoConfiguration {
 
-    // Inyecta el valor del access token desde application.properties
-    // El nombre de la propiedad debe coincidir con el de application.properties
-    @Value("${mercadopago.access_token}") // Nota: Usar underscore si así lo definiste en properties
+    private static final Logger logger = LoggerFactory.getLogger(MercadoPagoConfiguration.class);
+
+    @Value("${mercadopago.access_token}")
     private String accessToken;
 
-    /**
-     * Este método se ejecuta automáticamente después de que la instancia de MercadoPagoConfiguration
-     * ha sido creada y sus dependencias (como 'accessToken') han sido inyectadas por Spring.
-     * Es el lugar ideal para inicializar el SDK de Mercado Pago.
-     */
     @PostConstruct
     public void init() {
         try {
-            // Establece el Access Token globalmente para el SDK de Mercado Pago.
-            // Este es el método estático correcto para la versión 2.1.24 del SDK.
+            logger.info("Initializing Mercado Pago SDK with Access Token: (first 5 chars) {}", accessToken.substring(0, Math.min(accessToken.length(), 5)));
             MercadoPagoConfig.setAccessToken(accessToken);
-            System.out.println("Mercado Pago SDK inicializado correctamente con Access Token.");
+            System.out.println("DEBUG MP: Access Token utilizado para crear preferencia: " + accessToken);// Esto mostrará el token completo. Si no quieres que aparezca completo, puedes usar substring.
+
+            logger.info("Mercado Pago SDK initialized successfully.");
         } catch (Exception e) {
-            // Captura cualquier excepción durante la inicialización (ej. token inválido, problemas de red)
-            System.err.println("ERROR: Falló la inicialización del SDK de Mercado Pago.");
-            System.err.println("Mensaje de error: " + e.getMessage());
-            System.err.println("Asegúrate de que 'mercadopago.access_token' en application.properties sea válido.");
-            e.printStackTrace(); // Imprime la traza completa para depuración
+            logger.error("ERROR: Failed to initialize Mercado Pago SDK.");
+            logger.error("Error message: {}", e.getMessage());
+            logger.error("Ensure 'mercadopago.access_token' in application.properties is valid and correct.");
+            e.printStackTrace();
         }
+    }
+
+    @Bean // <--- AÑADIDO: Define PaymentClient como un bean
+    public PaymentClient paymentClient() {
+        // No es necesario setAccessToken aquí de nuevo, ya se hizo en init()
+        return new PaymentClient();
+    }
+
+    @Bean // <--- AÑADIDO: Define PreferenceClient como un bean
+    public PreferenceClient preferenceClient() {
+        // No es necesario setAccessToken aquí de nuevo, ya se hizo en init()
+        return new PreferenceClient();
     }
 }

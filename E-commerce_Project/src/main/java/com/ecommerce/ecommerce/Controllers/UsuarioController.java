@@ -8,7 +8,7 @@ import com.ecommerce.ecommerce.Services.BaseService;
 import com.ecommerce.ecommerce.dto.UserDTO;
 import com.ecommerce.ecommerce.dto.UserProfileUpdateDTO;
 import com.ecommerce.ecommerce.dto.UpdateCredentialsRequest;
-import com.ecommerce.ecommerce.dto.DomicilioDTO;
+import com.ecommerce.ecommerce.dto.DireccionDTO; // <-- Asegurarse que se importa este DTO
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -41,10 +41,11 @@ public class UsuarioController extends BaseController<Usuario,Long>{
     @GetMapping("/by-username/{username}")
     public ResponseEntity<UserDTO> getUsuarioByUsername(@PathVariable String username) {
         try {
-            Optional<Usuario> usuarioOptional = usuarioService.findByUserName(username);
+            Optional<Usuario> usuarioOptional = usuarioService.findByUserNameAndActivoTrue(username);
             if (usuarioOptional.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
+            // El mapeo a DTO se hace en el servicio en un método transaccional
             return ResponseEntity.ok(usuarioService.mapToUserDTO(usuarioOptional.get()));
         } catch (Exception e) {
             System.err.println("Error al obtener usuario por username: " + e.getMessage());
@@ -56,11 +57,12 @@ public class UsuarioController extends BaseController<Usuario,Long>{
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> getCurrentUserProfile() {
         try {
+            // El servicio ya devuelve un DTO
             UserDTO userDTO = usuarioService.getCurrentUser();
             return ResponseEntity.ok(userDTO);
-        } catch (RuntimeException e) { // Captura RuntimeException para los errores del service
+        } catch (RuntimeException e) {
             System.err.println("Error al obtener perfil de usuario: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // O un 404 si es por no encontrado
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         } catch (Exception e) {
             System.err.println("Error inesperado al obtener perfil de usuario: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -71,7 +73,8 @@ public class UsuarioController extends BaseController<Usuario,Long>{
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> updateCurrentUserProfile(@RequestBody UserProfileUpdateDTO userProfileUpdateDTO) {
         try {
-            Long userId = getUserIdFromAuthentication(); // Usa el método auxiliar
+            Long userId = getUserIdFromAuthentication();
+            // El servicio ya devuelve un DTO actualizado
             UserDTO updatedUser = usuarioService.updateProfile(userId, userProfileUpdateDTO);
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
@@ -87,7 +90,8 @@ public class UsuarioController extends BaseController<Usuario,Long>{
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> uploadProfileImage(@RequestParam("file") MultipartFile file) {
         try {
-            Long userId = getUserIdFromAuthentication(); // Usa el método auxiliar
+            Long userId = getUserIdFromAuthentication();
+            // El servicio ya devuelve un DTO actualizado
             UserDTO updatedUser = usuarioService.uploadProfileImage(userId, file);
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
@@ -103,7 +107,8 @@ public class UsuarioController extends BaseController<Usuario,Long>{
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserDTO> updateCredentials(@RequestBody UpdateCredentialsRequest request) {
         try {
-            Long userId = getUserIdFromAuthentication(); // Usa el método auxiliar
+            Long userId = getUserIdFromAuthentication();
+            // El servicio ya devuelve un DTO actualizado
             UserDTO updatedUser = usuarioService.updateCredentials(userId, request);
             return ResponseEntity.ok(updatedUser);
         } catch (RuntimeException e) {
@@ -115,19 +120,22 @@ public class UsuarioController extends BaseController<Usuario,Long>{
         }
     }
 
-    // --- Endpoints para gestionar Direcciones de un Usuario (Usando DomicilioDTO) ---
+    // --- Endpoints para gestionar Direcciones de un Usuario (Usando DireccionDTO) ---
 
+    // Modificado: Ahora devuelve ResponseEntity<List<DireccionDTO>>
     @GetMapping("/{userId}/direcciones")
-    public ResponseEntity<List<DomicilioDTO>> getDireccionesByUserId(@PathVariable Long userId) {
+    public ResponseEntity<List<DireccionDTO>> getDireccionesByUserId(@PathVariable Long userId) {
         try {
             List<Direccion> direcciones = usuarioService.getDireccionesByUserId(userId);
-            List<DomicilioDTO> domicilioDTOs = direcciones.stream()
-                    .map(usuarioService::mapToDomicilioDTO)
+            // El mapeo a DTO se hace en el servicio
+            List<DireccionDTO> direccionDTOS = direcciones.stream()
+                    .map(usuarioService::mapToDomicilioDTO) // Renombrado de mapToDomicilioDTO a mapToDireccionDTO si lo cambiaste en el servicio.
+                    // Por ahora, se mantiene mapToDomicilioDTO según tu código.
                     .collect(Collectors.toList());
-            return ResponseEntity.ok(domicilioDTOs);
+            return ResponseEntity.ok(direccionDTOS);
         } catch (RuntimeException e) {
             System.err.println("Error al obtener direcciones para el usuario " + userId + ": " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // Cambiado a BAD_REQUEST
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         } catch (Exception e) {
             System.err.println("Error inesperado al obtener direcciones para el usuario " + userId + ": " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -135,9 +143,10 @@ public class UsuarioController extends BaseController<Usuario,Long>{
     }
 
     @PostMapping("/{userId}/direcciones")
-    public ResponseEntity<DomicilioDTO> addDireccionToUser(@PathVariable Long userId, @RequestBody DomicilioDTO domicilioDTO) {
+    public ResponseEntity<DireccionDTO> addDireccionToUser(@PathVariable Long userId, @RequestBody DireccionDTO direccionDTO) {
         try {
-            Direccion newDireccion = usuarioService.addDireccionToUser(userId, domicilioDTO);
+            Direccion newDireccion = usuarioService.addDireccionToUser(userId, direccionDTO);
+            // El mapeo a DTO se hace en el servicio
             return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.mapToDomicilioDTO(newDireccion));
         } catch (RuntimeException e) {
             System.err.println("Error al añadir dirección para el usuario " + userId + ": " + e.getMessage());
@@ -149,9 +158,10 @@ public class UsuarioController extends BaseController<Usuario,Long>{
     }
 
     @PutMapping("/{userId}/direcciones/{direccionId}")
-    public ResponseEntity<DomicilioDTO> updateDireccionForUser(@PathVariable Long userId, @PathVariable Long direccionId, @RequestBody DomicilioDTO updatedDomicilioDTO) {
+    public ResponseEntity<DireccionDTO> updateDireccionForUser(@PathVariable Long userId, @PathVariable Long direccionId, @RequestBody DireccionDTO updatedDireccionDTO) {
         try {
-            Direccion savedDireccion = usuarioService.updateDireccionForUser(userId, direccionId, updatedDomicilioDTO);
+            Direccion savedDireccion = usuarioService.updateDireccionForUser(userId, direccionId, updatedDireccionDTO);
+            // El mapeo a DTO se hace en el servicio
             return ResponseEntity.ok(usuarioService.mapToDomicilioDTO(savedDireccion));
         } catch (RuntimeException e) {
             System.err.println("Error al actualizar dirección " + direccionId + " para el usuario " + userId + ": " + e.getMessage());
@@ -176,12 +186,12 @@ public class UsuarioController extends BaseController<Usuario,Long>{
         }
     }
 
+    // Este método auxiliar ya está bien y delega al servicio
     private Long getUserIdFromAuthentication() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new IllegalStateException("Usuario no autenticado.");
         }
-        // Delega la lógica de obtener el ID a tu UsuarioService, que ya la tiene
         return usuarioService.getUserIdByUsernameOrEmail(authentication.getName());
     }
 }

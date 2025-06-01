@@ -28,5 +28,5 @@ public class UserDTO {
     private String telefono;
     private Rol role;
     private ImagenDTO imagenUser;
-    private List<DomicilioDTO> addresses;
+    private List<DireccionDTO> addresses;
 }

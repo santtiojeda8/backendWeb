@@ -1,9 +1,6 @@
 package com.ecommerce.ecommerce.Entities;
 
-// Mantén JsonManagedReference si tienes la relación interna con Base (no es común, revisa tu Base)
-// import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.JsonBackReference; // <-- Importar JsonBackReference
-
+import com.fasterxml.jackson.annotation.JsonManagedReference; // <-- Importar JsonManagedReference
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -36,13 +33,11 @@ public class Descuento extends Base{
     @Column(name="precio_promocional")
     private Double precioPromocional;
 
-    // Relación Descuento <-> Producto
+    // Relación Descuento <-> Producto (lado dueño)
     @ManyToMany
     @JoinTable(name = "producto_descuentosid", joinColumns = @JoinColumn(name = "descuentoId"), inverseJoinColumns = @JoinColumn(name="productoId"))
     @Builder.Default
-    // <-- CAMBIAR A JsonBackReference con el nombre que coincida con el lado Managed en Producto
-    @JsonBackReference("producto-descuentos")
+    // CAMBIO CRÍTICO: Usar @JsonManagedReference con un nombre para emparejar
+    @JsonManagedReference("descuento-productos") // <--- ¡CAMBIO AQUÍ!
     private Set<Producto> productos = new HashSet<>();
-
-
 }

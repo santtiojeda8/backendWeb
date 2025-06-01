@@ -1,10 +1,11 @@
-// com/ecommerce/ecommerce/dto/OrdenCompraDetalleDTO.java (MODIFICADO Y CORREGIDO)
 package com.ecommerce.ecommerce.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal; // <--- ¡ASEGÚRATE DE ESTA IMPORTACIÓN!
 
 @Data
 @Builder
@@ -13,26 +14,24 @@ import lombok.NoArgsConstructor;
 public class OrdenCompraDetalleDTO {
     private Long id;
     private Integer cantidad;
-    private Double subtotal;
-    private Long ordenCompraId; // Agregado para la relación con OrdenCompra
-    private Long productoDetalleId; // Agregado para la relación con ProductoDetalle
+    private BigDecimal precioUnitario; // <--- ¡DEBE SER BIGDECIMAL!
+    private BigDecimal subtotal;       // <--- ¡DEBE SER BIGDECIMAL!
+    private Long ordenCompraId;
+    private Long productoDetalleId;
 
-    // Asegúrate de que esta clase anidada sea 'public static'
-    private ProductoDetalleNestedDTO productoDetalle; // Campo para el objeto anidado
+    private ProductoDetalleNestedDTO productoDetalle;
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ProductoDetalleNestedDTO { // <--- CLAVE: public static
+    public static class ProductoDetalleNestedDTO {
         private Long id;
-        private Double precioCompra;
+        private BigDecimal precioCompra; // <--- ¡DEBE SER BIGDECIMAL!
         private Integer stockActual;
         private Integer stockMaximo;
         private String color;
         private String talle;
-        private String productoDenominacion; // <--- ¡AÑADIDO ESTE CAMPO AQUÍ!
-        // Si necesitas el ID del Producto padre, lo puedes añadir aquí:
-        // private Long productoPadreId;
+        private String productoDenominacion;
     }
 }

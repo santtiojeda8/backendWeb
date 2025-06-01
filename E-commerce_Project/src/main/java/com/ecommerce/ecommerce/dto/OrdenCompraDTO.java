@@ -6,21 +6,28 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class OrdenCompraDTO {
     private Long id;
-    private Double total;
-
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") // Asegura el formato ISO 8601
+    private BigDecimal total;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaCompra;
-
-    private String direccionEnvio; // O un DomicilioDTO si es más complejo
+    private String direccionEnvio; // This might become less relevant if Direccion entity is fully used
     private List<OrdenCompraDetalleDTO> detalles;
-     private UserDTO usuario;
+    private Long usuarioId;
+    private String estadoOrden; // Represents EstadoOrdenCompra enum as String
+    private String mercadopagoPreferenceId;
+    private String mercadopagoPaymentId;
+    private String shippingOption; // e.g., "delivery", "pickup"
+    private BigDecimal shippingCost;
+    private String buyerPhoneNumber;
+    private Long direccionId; // ID of an existing Direccion
+    private DireccionDTO nuevaDireccion; // <--- ADD THIS FIELD
 }
