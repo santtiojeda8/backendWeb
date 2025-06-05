@@ -48,6 +48,10 @@ dependencies {
 
 	// --- DEPENDENCIA DE MERCADO PAGO ---
 	implementation 'com.mercadopago:sdk-java:2.4.0' // ¡Esta es la versión correcta!
+
+	// --- DEPENDENCIA DE CLOUDINARY ---
+	implementation 'com.cloudinary:cloudinary-http44:1.38.0'
+
 }
 
 tasks.named('test') {

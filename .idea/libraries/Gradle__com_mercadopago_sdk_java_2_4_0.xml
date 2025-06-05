@@ -5,6 +5,8 @@
       <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.mercadopago/sdk-java/2.4.0/d46e5d40e20442267eb69d836f7b51d932c8df74/sdk-java-2.4.0.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.mercadopago/sdk-java/2.4.0/e32666c073b91d21c8ebbe296442b72fbac475b7/sdk-java-2.4.0-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

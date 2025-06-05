@@ -429,11 +429,12 @@ public class ProductoService extends BaseService<Producto, Long> {
         detalleDTO.setCantidad(detalleEntity.getStockActual());
         detalleDTO.setActivo(detalleEntity.isActivo());
 
-        if (detalleEntity.getProducto() != null && detalleEntity.getProducto().getId() != null) {
-            ProductoDTO productoRefDTO = new ProductoDTO();
-            productoRefDTO.setId(detalleEntity.getProducto().getId());
-            detalleDTO.setProducto(productoRefDTO);
-        }
+        // REMOVIDO: Esto causaba la referencia circular innecesaria.
+        // if (detalleEntity.getProducto() != null && detalleEntity.getProducto().getId() != null) {
+        //     ProductoDTO productoRefDTO = new ProductoDTO();
+        //     productoRefDTO.setId(detalleEntity.getProducto().getId());
+        //     detalleDTO.setProducto(productoRefDTO);
+        // }
         return detalleDTO;
     }
 
@@ -527,7 +528,7 @@ public class ProductoService extends BaseService<Producto, Long> {
 
         LocalDate hoy = LocalDate.now();
         LocalTime ahora = LocalTime.now();
-        Double precioConDescuentoMasAlto = precioActual;
+        Double precioConDescuentoMasBajo = precioActual;
 
         for (Descuento descuento : producto.getDescuentos()) {
             boolean fechaValida = (descuento.getFechaDesde() == null || !descuento.getFechaDesde().isAfter(hoy)) &&
@@ -536,12 +537,21 @@ public class ProductoService extends BaseService<Producto, Long> {
                     (descuento.getHoraHasta() == null || !descuento.getHoraHasta().isBefore(ahora));
 
             if (fechaValida && horaValida) {
-                double precioAplicandoEsteDescuento = precioActual * (1 - descuento.getPrecioPromocional());
-                if (precioAplicandoEsteDescuento < precioConDescuentoMasAlto) {
-                    precioConDescuentoMasAlto = precioAplicandoEsteDescuento;
+                // *** MODIFICACIÓN PARA EL ESCENARIO 2:
+                // Asume que getPrecioPromocional() ya es un factor decimal (ej. 0.2 para 20%)
+                // Validación para asegurar que el factor esté entre 0 y 1 para un descuento válido
+                double factorDescuento = descuento.getPrecioPromocional();
+                if (factorDescuento < 0 || factorDescuento >= 1) { // Un factor de 1 o más significaría que no hay descuento o es un aumento
+                    System.err.println("Advertencia: Factor de descuento (" + factorDescuento + ") fuera de rango (0 a <1) para el producto ID: " + producto.getId());
+                    continue; // Saltar este descuento si es inválido
+                }
+                double precioAplicandoEsteDescuento = precioActual * (1 - factorDescuento);
+
+                if (precioAplicandoEsteDescuento < precioConDescuentoMasBajo) {
+                    precioConDescuentoMasBajo = precioAplicandoEsteDescuento;
                 }
             }
         }
-        return precioConDescuentoMasAlto;
+        return precioConDescuentoMasBajo;
     }
 }

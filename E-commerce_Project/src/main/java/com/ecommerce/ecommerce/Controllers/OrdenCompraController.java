@@ -179,7 +179,7 @@ public class OrdenCompraController extends BaseController<OrdenCompra, Long> {
 
             EstadoOrdenCompra nuevoEstado = EstadoOrdenCompra.valueOf(estadoStr.toUpperCase());
 
-            OrdenCompra updatedOrden = ordenCompraService.actualizarEstadoOrden(ordenId, nuevoEstado, mpPaymentId);
+            OrdenCompra updatedOrden = ordenCompraService.actualizarEstadoOrdenYStock(ordenId, nuevoEstado, mpPaymentId);
 
             return ResponseEntity.ok(ordenCompraService.mapOrdenCompraToDTO(updatedOrden));
         } catch (IllegalArgumentException e) { // Para errores de enum.valueOf() o validaciones del servicio

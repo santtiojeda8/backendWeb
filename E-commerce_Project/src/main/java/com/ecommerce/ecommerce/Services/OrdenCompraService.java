@@ -24,10 +24,6 @@ import com.ecommerce.ecommerce.dto.UserDTO;
 
 import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
 
-import com.mercadopago.client.payment.PaymentClient;
-import com.mercadopago.exceptions.MPApiException;
-import com.mercadopago.exceptions.MPException;
-import com.mercadopago.resources.payment.Payment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,8 +42,9 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
 
     private static final Logger logger = LoggerFactory.getLogger(OrdenCompraService.class);
 
-    private static final int MAX_RETRIES = 5;
-    private static final long RETRY_DELAY_MS = 5000;
+    // ELIMINADAS CONSTANTES RELACIONADAS CON REINTENTOS DE MP
+    // private static final int MAX_RETRIES = 5;
+    // private static final long RETRY_DELAY_MS = 5000;
 
     private final OrdenCompraRepository ordenCompraRepository;
     private final OrdenCompraDetalleRepository ordenCompraDetalleRepository;
@@ -57,7 +54,7 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
     private final LocalidadRepository localidadRepository;
     private final ProvinciaRepository provinciaRepository;
     private final OrdenCompraDetalleService ordenCompraDetalleService;
-    private final PaymentClient paymentClient;
+    // ELIMINADO: private final PaymentClient paymentClient;
 
     @Autowired
     public OrdenCompraService(OrdenCompraRepository ordenCompraRepository,
@@ -67,8 +64,9 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                               DireccionRepository direccionRepository,
                               LocalidadRepository localidadRepository,
                               ProvinciaRepository provinciaRepository,
-                              OrdenCompraDetalleService ordenCompraDetalleService,
-                              PaymentClient paymentClient) {
+                              OrdenCompraDetalleService ordenCompraDetalleService
+                              // ELIMINADO paymentClient del constructor
+    ) {
         super(ordenCompraRepository);
         this.ordenCompraRepository = ordenCompraRepository;
         this.ordenCompraDetalleRepository = ordenCompraDetalleRepository;
@@ -78,7 +76,7 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
         this.localidadRepository = localidadRepository;
         this.provinciaRepository = provinciaRepository;
         this.ordenCompraDetalleService = ordenCompraDetalleService;
-        this.paymentClient = paymentClient;
+        // ELIMINADO: this.paymentClient = paymentClient;
     }
 
     // --- Métodos de Mapeo de Entidad a DTO ---
@@ -110,7 +108,7 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                 .id(ordenCompra.getId())
                 .total(ordenCompra.getTotal())
                 .fechaCompra(ordenCompra.getFechaCompra())
-                .direccionEnvio(ordenCompra.getDireccionEnvio())
+                .direccionEnvio(ordenCompra.getDireccionEnvio()) // Este campo podría ser redundante si ya se usa direccionAsociada
                 .detalles(detalleDTOs)
                 .usuarioId(usuarioIdFromEntity)
                 .estadoOrden(ordenCompra.getEstadoOrden() != null ? ordenCompra.getEstadoOrden().name() : null)
@@ -271,7 +269,7 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
         newOrden.setTipoEnvio(dto.getShippingOption());
         newOrden.setCostoEnvio(dto.getShippingCost());
         newOrden.setTelefono(dto.getBuyerPhoneNumber());
-        newOrden.setDireccionEnvio(dto.getDireccionEnvio());
+        newOrden.setDireccionEnvio(dto.getDireccionEnvio()); // Si este campo no se usa, considerar eliminarlo
 
         if (dto.getDireccionId() != null) {
             Direccion existingDireccion = direccionRepository.findByIdAndActivoTrue(dto.getDireccionId())
@@ -279,6 +277,10 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
             newOrden.setDireccion(existingDireccion);
         } else if (dto.getNuevaDireccion() != null) {
             Direccion newDireccionEntity = mapDireccionDTOToEntity(dto.getNuevaDireccion());
+            // Asociar el usuario a la nueva dirección antes de guardarla
+            if (newOrden.getUsuario() != null) {
+                newDireccionEntity.setUsuario(newOrden.getUsuario());
+            }
             newOrden.setDireccion(direccionRepository.save(newDireccionEntity));
         }
 
@@ -353,6 +355,10 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
             entityToUpdate.setDireccion(newDireccion);
         } else if (dto.getNuevaDireccion() != null) {
             Direccion newDireccionEntity = mapDireccionDTOToEntity(dto.getNuevaDireccion());
+            // Asociar el usuario a la nueva dirección antes de guardarla
+            if (entityToUpdate.getUsuario() != null) {
+                newDireccionEntity.setUsuario(entityToUpdate.getUsuario());
+            }
             entityToUpdate.setDireccion(direccionRepository.save(newDireccionEntity));
         }
 
@@ -414,17 +420,34 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
     }
 
 
+    /**
+     * Crea una orden de compra inicial en la base de datos con los datos proporcionados.
+     * Esta orden se establece en estado PENDIENTE_PAGO y su total se basa en el monto
+     * calculado externamente (ej. por MercadoPagoController antes de crear la preferencia).
+     *
+     * @param userId             ID del usuario que realiza la compra.
+     * @param buyerPhoneNumber   Número de teléfono del comprador.
+     * @param nuevaDireccionDTO  DTO con los datos de una nueva dirección (si aplica).
+     * @param direccionIdExistente ID de una dirección existente (si aplica).
+     * @param shippingOption     Opción de envío ("delivery" o "pickup").
+     * @param shippingCost       Costo del envío.
+     * @param montoTotalCalculado Monto total final de la orden (incluyendo envío).
+     * @param detallesDTO        Lista de detalles de la orden.
+     * @return La OrdenCompra creada y persistida.
+     * @throws Exception Si el usuario no se encuentra, hay problemas de stock o datos de dirección.
+     */
     @Transactional
     public OrdenCompra crearOrdenInicial(
             Long userId,
-            String direccionEnvio,
-            String buyerPhoneNumber,
+            String buyerPhoneNumber, // Se eliminó direccionEnvio (String) de aquí
             DireccionDTO nuevaDireccionDTO,
             Long direccionIdExistente,
             String shippingOption,
             BigDecimal shippingCost,
-            BigDecimal montoTotalCalculado, // <--- Este es el total definitivo calculado en MercadoPagoService
+            BigDecimal montoTotalCalculado,
             List<OrdenCompraDetalleDTO> detallesDTO) throws Exception {
+
+        logger.info("Creando orden inicial para usuario ID: {}", userId); // Log de inicio
 
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
@@ -434,17 +457,21 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
             if (direccionIdExistente != null) {
                 direccionAsociada = direccionRepository.findByIdAndActivoTrue(direccionIdExistente)
                         .orElseThrow(() -> new ResourceNotFoundException("Direccion existente no encontrada o inactiva con ID: " + direccionIdExistente));
+                // Asegurar que la dirección existente esté asociada al usuario si no lo está
                 if (!usuario.getDirecciones().contains(direccionAsociada)) {
                     usuario.addDireccion(direccionAsociada);
-                    usuarioRepository.save(usuario);
+                    usuarioRepository.save(usuario); // Guardar el usuario para actualizar la relación
+                    logger.info("Asociando dirección existente ID {} a usuario ID {}", direccionIdExistente, userId);
                 }
             } else if (nuevaDireccionDTO != null) {
                 Direccion nuevaDireccionEntity = mapDireccionDTOToEntity(nuevaDireccionDTO);
                 nuevaDireccionEntity.setActivo(true);
+                nuevaDireccionEntity.setUsuario(usuario); // Asociar la nueva dirección al usuario
                 direccionAsociada = direccionRepository.save(nuevaDireccionEntity);
 
                 usuario.addDireccion(direccionAsociada);
-                usuarioRepository.save(usuario);
+                usuarioRepository.save(usuario); // Guardar el usuario para actualizar la relación
+                logger.info("Creando y asociando nueva dirección a usuario ID {}", userId);
             } else {
                 throw new IllegalArgumentException("Debe proporcionar una dirección existente (direccionId) o una nueva (nuevaDireccion) para envío a domicilio.");
             }
@@ -455,16 +482,15 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
         ordenCompra.setFechaActualizacionEstado(LocalDateTime.now());
         ordenCompra.setEstadoOrden(EstadoOrdenCompra.PENDIENTE_PAGO);
         ordenCompra.setUsuario(usuario);
-        ordenCompra.setDireccionEnvio(direccionEnvio);
+        // ordenCompra.setDireccionEnvio(direccionEnvio); // Campo eliminado de la firma y aquí
         ordenCompra.setTelefono(buyerPhoneNumber);
         ordenCompra.setTipoEnvio(shippingOption);
         ordenCompra.setCostoEnvio(shippingCost);
-        ordenCompra.setTotal(montoTotalCalculado); // <--- ¡¡¡Usar directamente el total calculado y enviado desde MercadoPagoService!!!
+        ordenCompra.setTotal(montoTotalCalculado); // Usar directamente el total calculado y enviado desde MercadoPagoController
         ordenCompra.setDireccion(direccionAsociada);
         ordenCompra.setActivo(true);
 
         // --- Handle Order Details and Stock Management ---
-        // Este bucle ahora solo maneja los detalles y el stock, NO recalcula el total de la orden.
         for (OrdenCompraDetalleDTO detalleDTO : detallesDTO) {
             ProductoDetalle productoDetalle = productoDetalleRepository.findById(detalleDTO.getProductoDetalleId())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto Detalle no encontrado con ID: " + detalleDTO.getProductoDetalleId()));
@@ -478,139 +504,65 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
 
             ordenCompra.addDetalle(detalle);
 
-            // No se suma al total de la orden aquí, porque ya viene calculado
-            // calculatedTotalFromDetails = calculatedTotalFromDetails.add(detalle.getPrecioUnitario().multiply(new BigDecimal(detalle.getCantidad())));
-
+            // Disminuir stock
             productoDetalle.setStockActual(productoDetalle.getStockActual() - detalleDTO.getCantidad());
             productoDetalleRepository.save(productoDetalle);
+            logger.info("Stock de ProductoDetalle ID {} disminuido en {}. Nuevo stock: {}", productoDetalle.getId(), detalleDTO.getCantidad(), productoDetalle.getStockActual());
         }
 
-        // Ya no es necesario recalcular el total aquí, ya que montoTotalCalculado ya lo incluye
-        // if (ordenCompra.getCostoEnvio() != null) {
-        //     calculatedTotalFromDetails = calculatedTotalFromDetails.add(ordenCompra.getCostoEnvio());
-        // }
-        // ordenCompra.setTotal(calculatedTotalFromDetails); // <-- ELIMINAR ESTA LÍNEA
-
-        return ordenCompraRepository.save(ordenCompra);
+        OrdenCompra savedOrden = ordenCompraRepository.save(ordenCompra);
+        logger.info("Orden de compra ID {} creada exitosamente con estado PENDIENTE_PAGO.", savedOrden.getId());
+        return savedOrden;
     }
 
+    /**
+     * Actualiza el estado de una orden de compra y el ID de pago de Mercado Pago.
+     * Este método será llamado desde el MercadoPagoController al recibir un webhook.
+     *
+     * @param ordenId    ID de la orden de compra a actualizar.
+     * @param nuevoEstado El nuevo estado de la orden.
+     * @param mpPaymentId El ID de pago de Mercado Pago asociado.
+     * @return La OrdenCompra actualizada.
+     * @throws ResourceNotFoundException Si la orden no se encuentra.
+     * @throws Exception                 En caso de otros errores.
+     */
     @Transactional
-    public OrdenCompra actualizarEstadoOrden(Long ordenId, EstadoOrdenCompra nuevoEstado, String mpPaymentId) throws Exception {
+    public OrdenCompra actualizarEstadoOrdenYStock(Long ordenId, EstadoOrdenCompra nuevoEstado, String mpPaymentId) throws Exception {
+        logger.info("Actualizando estado de orden ID {} a {}. Payment ID: {}", ordenId, nuevoEstado, mpPaymentId);
         OrdenCompra orden = super.buscarPorId(ordenId);
         if (orden == null) {
             throw new ResourceNotFoundException("Orden de compra no encontrada con ID: " + ordenId);
         }
-        orden.setEstadoOrden(nuevoEstado);
-        orden.setFechaActualizacionEstado(LocalDateTime.now());
-        if (mpPaymentId != null && !mpPaymentId.isEmpty()) {
-            orden.setMercadopagoPaymentId(mpPaymentId);
-        }
-        return ordenCompraRepository.save(orden);
-    }
 
-    // --- MÉTODO: Procesar Notificación de Pago de Mercado Pago (Webhook) ---
-    @Transactional
-    public void procesarNotificacionPagoMP(String paymentId) throws MPException {
-        logger.info("Iniciando procesamiento de notificación de pago de Mercado Pago para paymentId: {}", paymentId);
+        EstadoOrdenCompra estadoActual = orden.getEstadoOrden();
 
-        if (paymentId == null || paymentId.isEmpty()) {
-            throw new IllegalArgumentException("El ID de pago de Mercado Pago no puede ser nulo o vacío.");
-        }
-
-        Payment payment = null;
-        int retries = 0;
-        boolean paymentFound = false;
-
-        while (retries < MAX_RETRIES && !paymentFound) {
-            try {
-                payment = this.paymentClient.get(Long.valueOf(paymentId));
-                paymentFound = true;
-                logger.info("Pago {} encontrado en Mercado Pago. Estado: {}", paymentId, payment.getStatus());
-            } catch (MPApiException e) {
-                if (e.getStatusCode() == 404) {
-                    retries++;
-                    logger.warn("Error 404 (Payment not found) al consultar pago {} en Mercado Pago. Reintento {} de {}. Detalles: {}",
-                            paymentId, retries, MAX_RETRIES, e.getApiResponse() != null ? e.getApiResponse().getContent() : "N/A");
-                    if (retries < MAX_RETRIES) {
-                        try {
-                            Thread.sleep(RETRY_DELAY_MS);
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            throw new MPException("Interrupción durante el reintento de consulta de pago.", ie);
-                        }
-                    }
-                } else {
-                    logger.error("Error al consultar la API de Mercado Pago para el pago {}: {}", paymentId, e.getApiResponse() != null ? e.getApiResponse().getContent() : e.getMessage());
-                    throw new MPException("Error al consultar estado del pago en Mercado Pago.", e);
-                }
-            } catch (Exception e) {
-                logger.error("Error inesperado al consultar pago {} en Mercado Pago: {}", paymentId, e.getMessage(), e);
-                throw new MPException("Error al consultar estado del pago en Mercado Pago.", e);
-            }
-        }
-
-        if (!paymentFound || payment == null) {
-            logger.error("No se pudo obtener el pago {} de Mercado Pago después de {} reintentos.", paymentId, MAX_RETRIES);
-            throw new MPException("No se pudo obtener el pago " + paymentId + " de Mercado Pago después de " + MAX_RETRIES + " reintentos.");
-        }
-
-        logger.info("Estado del pago {} en Mercado Pago: {}", paymentId, payment.getStatus());
-        logger.info("External Reference asociado al pago {}: {}", paymentId, payment.getExternalReference());
-
-        // Obtener la OrdenCompra usando el external_reference
-        Long ordenCompraId;
-        try {
-            ordenCompraId = Long.valueOf(payment.getExternalReference());
-        } catch (NumberFormatException e) {
-            logger.error("External Reference '{}' no es un ID numérico válido para la OrdenCompra.", payment.getExternalReference());
-            throw new IllegalArgumentException("External Reference no es un ID de OrdenCompra válido.");
-        }
-
-        OrdenCompra orden = ordenCompraRepository.findById(ordenCompraId)
-                .orElseThrow(() -> new ResourceNotFoundException("Orden de compra no encontrada con ID: " + ordenCompraId));
-
-        // Actualizar el estado de la orden según el estado del pago de Mercado Pago
-        String mpStatus = payment.getStatus();
-        EstadoOrdenCompra nuevoEstado;
-
-        switch (mpStatus) {
-            case "approved":
-                nuevoEstado = EstadoOrdenCompra.PAGADA;
-                break;
-            case "pending":
-            case "in_process":
-                nuevoEstado = EstadoOrdenCompra.PENDIENTE_PAGO;
-                break;
-            case "rejected":
-            case "cancelled":
-            case "refunded":
-            case "charged_back":
-                nuevoEstado = EstadoOrdenCompra.RECHAZADA;
-                break;
-            default:
-                logger.warn("Estado de pago desconocido de Mercado Pago para el pago {}: {}", paymentId, mpStatus);
-                nuevoEstado = orden.getEstadoOrden(); // Mantener el estado actual si es desconocido
-                break;
-        }
-
-        // Only update if the state is different or if it's a "more final" state
-        if (!orden.getEstadoOrden().equals(nuevoEstado)) {
+        // Si el estado de la orden es diferente al nuevo estado recibido
+        if (!estadoActual.equals(nuevoEstado)) {
             orden.setEstadoOrden(nuevoEstado);
-            orden.setMercadopagoPaymentId(paymentId); // Save the Mercado Pago payment ID
-            ordenCompraRepository.save(orden);
-            logger.info("Orden de compra {} actualizada a estado: {}", orden.getId(), nuevoEstado);
+            orden.setFechaActualizacionEstado(LocalDateTime.now());
+            if (mpPaymentId != null && !mpPaymentId.isEmpty()) {
+                orden.setMercadopagoPaymentId(mpPaymentId);
+            }
 
-            // Additional logic based on the final payment status
-            if (nuevoEstado == EstadoOrdenCompra.RECHAZADA) {
-                logger.warn("El pago de la orden {} fue RECHAZADO. Revertiendo stock si se había descontado.", orden.getId());
-                // Assuming stock was decreased when the order was created
+            // Lógica de gestión de stock basada en el cambio de estado
+            if (nuevoEstado == EstadoOrdenCompra.PAGADA && estadoActual != EstadoOrdenCompra.PAGADA) {
+                logger.info("Orden {} pasa a PAGADA. Stock ya fue descontado en la creación inicial.", orden.getId());
+            } else if (nuevoEstado == EstadoOrdenCompra.RECHAZADA && estadoActual != EstadoOrdenCompra.RECHAZADA) {
+                logger.warn("El pago de la orden {} fue RECHAZADO o similar. Revertiendo stock si se había descontado.", orden.getId());
                 for (OrdenCompraDetalle detalle : orden.getDetalles()) {
                     ProductoDetalle productoDetalle = detalle.getProductoDetalle();
-                    // Revert stock (add back what was deducted)
-                    productoDetalle.setStockActual(productoDetalle.getStockActual() + detalle.getCantidad());
-                    productoDetalleRepository.save(productoDetalle);
+                    if (productoDetalle != null) {
+                        productoDetalle.setStockActual(productoDetalle.getStockActual() + detalle.getCantidad());
+                        productoDetalleRepository.save(productoDetalle);
+                        logger.info("Stock de ProductoDetalle ID {} revertido en {}. Nuevo stock: {}",
+                                productoDetalle.getId(), detalle.getCantidad(), productoDetalle.getStockActual());
+                    }
                 }
             }
         }
+        // Guardar la orden solo si hubo un cambio de estado o de paymentId
+        OrdenCompra updatedOrden = ordenCompraRepository.save(orden);
+        logger.info("Orden de compra ID {} actualizada a estado {}.", updatedOrden.getId(), updatedOrden.getEstadoOrden());
+        return updatedOrden;
     }
 }

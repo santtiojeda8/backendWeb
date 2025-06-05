@@ -1,183 +1,181 @@
 package com.ecommerce.ecommerce.mercadopago;
 
+// Importaciones de DTOs
 import com.ecommerce.ecommerce.dto.MercadoPagoPreferenceRequestDTO;
-import com.ecommerce.ecommerce.dto.OrdenCompraDTO;
-import com.ecommerce.ecommerce.Entities.OrdenCompra;
-import com.ecommerce.ecommerce.Services.OrdenCompraService;
 
+
+
+// Importaciones de Entidades
+import com.ecommerce.ecommerce.Entities.OrdenCompra;
+import com.ecommerce.ecommerce.Entities.Usuario;
+import com.ecommerce.ecommerce.Entities.enums.EstadoOrdenCompra;
+
+// Importaciones de Servicios
+import com.ecommerce.ecommerce.Services.OrdenCompraService;
+import com.ecommerce.ecommerce.Services.UsuarioService;
+
+// Importaciones de Mercado Pago SDK
+import com.mercadopago.client.preference.*;
 import com.mercadopago.exceptions.MPApiException;
-import com.mercadopago.exceptions.MPException;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.mercadopago.net.MPResponse;
+import com.mercadopago.resources.preference.Preference;
+
+// Importaciones de Spring Framework
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-// IMPORTACIONES ADICIONALES NECESARIAS
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/mercadopago")
 @CrossOrigin("*")
+@RequestMapping("/api/payments")
 public class MercadoPagoController {
 
-    private static final Logger logger = LoggerFactory.getLogger(MercadoPagoController.class);
-    private final ObjectMapper objectMapper = new ObjectMapper(); // <--- AÑADE ESTA LÍNEA
+    @Value("${MERCADOPAGO_ACCESS_TOKEN}")
+    private String accesToken;
 
-    @Autowired
-    private MercadoPagoService mercadoPagoService;
+    private final OrdenCompraService ordenCompraService;
+    private final UsuarioService usuarioService;
 
-    @Autowired
-    private OrdenCompraService ordenCompraService;
+    // Constructor que inyecta los servicios necesarios
+    public MercadoPagoController(OrdenCompraService ordenCompraService,
+                                 UsuarioService usuarioService) {
+        this.ordenCompraService = ordenCompraService;
+        this.usuarioService = usuarioService;
+    }
 
     @PostMapping("/create-preference")
-    public ResponseEntity<?> createPreference(@RequestBody MercadoPagoPreferenceRequestDTO requestDTO) {
+    public ResponseEntity<String> createCheckout(@RequestBody MercadoPagoPreferenceRequestDTO requestDTO) {
         try {
-            logger.info("MercadoPagoPreferenceRequestDTO recibido del frontend: {}", requestDTO.toString());
-            String initPoint = mercadoPagoService.createPaymentPreference(requestDTO);
+            // 1. Configura el Access Token de Mercado Pago
+            com.mercadopago.MercadoPagoConfig.setAccessToken(accesToken);
+            System.out.println("Token Mercado Pago: " + accesToken);
 
-            if (initPoint != null && !initPoint.isEmpty()) {
-                Map<String, String> response = new HashMap<>();
-                response.put("init_point", initPoint);
-                return ResponseEntity.ok(response);
-            } else {
-                logger.warn("El servicio de Mercado Pago retornó un initPoint nulo o vacío.");
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear la preferencia de pago: No se pudo obtener la URL de Mercado Pago.");
+            // 2. Valida y obtiene el usuario del sistema
+            Usuario usuario;
+            try {
+                // ⭐ CORRECCIÓN AQUÍ: Llamamos directamente a buscarPorId y manejamos su posible excepción ⭐
+                usuario = usuarioService.buscarPorId(requestDTO.getUserId());
+            } catch (Exception e) {
+                // Captura la excepción lanzada por UsuarioService.buscarPorId si el usuario no es encontrado
+                System.err.println("Error al encontrar el usuario con ID " + requestDTO.getUserId() + ": " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("{\"error\":\"Usuario no encontrado o inactivo con ID: " + requestDTO.getUserId() + "\"}");
             }
-        } catch (MPApiException e) {
-            logger.error("MPApiException en el controlador: {}", e.getMessage());
-            String mpErrorDetails = (e.getApiResponse() != null && e.getApiResponse().getContent() != null)
-                    ? e.getApiResponse().getContent() : "No hay detalles adicionales de la API.";
-            logger.error("Detalles de la API de Mercado Pago en el controlador: {}", mpErrorDetails);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error de la API de Mercado Pago: " + e.getMessage() + " Detalles: " + mpErrorDetails);
-        } catch (MPException e) {
-            logger.error("MPException (SDK) en el controlador: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error del SDK de Mercado Pago: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            logger.error("Error de validación de datos en el controlador: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error de validación de datos: " + e.getMessage());
+
+            // 3. Crea la Orden de Compra en tu base de datos.
+            OrdenCompra ordenCompra = null;
+            try {
+                ordenCompra = ordenCompraService.crearOrdenInicial(
+                        requestDTO.getUserId(),
+                        requestDTO.getBuyerPhoneNumber(),
+                        requestDTO.getNuevaDireccion(),
+                        requestDTO.getDireccionId(),
+                        requestDTO.getShippingOption(),
+                        requestDTO.getShippingCost(),
+                        requestDTO.getMontoTotal(),
+                        requestDTO.getDetalles()
+                );
+            } catch (Exception e) {
+                // Si ocurre un error al crear la orden en tu sistema, devuelve un error 500
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error al crear la orden de compra en el sistema: " + e.getMessage());
+            }
+
+            // 4. Usa el ID de la orden de compra recién creada como `external_reference` para Mercado Pago.
+            String externalReference = String.valueOf(ordenCompra.getId());
+
+            // 5. Configura los detalles de la preferencia de Mercado Pago
+            PreferenceBackUrlsRequest backUrls = PreferenceBackUrlsRequest.builder()
+                    .success(requestDTO.getBack_urls().get("success"))
+                    .pending(requestDTO.getBack_urls().get("pending"))
+                    .failure(requestDTO.getBack_urls().get("failure"))
+                    .build();
+
+            PreferencePayerRequest payer = PreferencePayerRequest.builder()
+                    .name(requestDTO.getPayerName())
+                    .surname(requestDTO.getPayerLastName())
+                    .email(requestDTO.getPayerEmail())
+                    .build();
+
+            // Mapea los ítems del DTO del frontend a los objetos de ítem que Mercado Pago espera
+            List<PreferenceItemRequest> items = requestDTO.getItems().stream()
+                    .map(mpItem -> PreferenceItemRequest.builder()
+                            .id(mpItem.getId())
+                            .title(mpItem.getTitle())
+                            .description(mpItem.getDescription())
+                            .pictureUrl(mpItem.getPictureUrl())
+                            .quantity(mpItem.getQuantity())
+                            .unitPrice(mpItem.getUnitPrice())
+                            .categoryId(mpItem.getCategoryId())
+                            .currencyId("ARS") // Moneda Argentina
+                            .build())
+                    .collect(Collectors.toList());
+
+            // Excluye tipos de pago si es necesario (ej. "ticket" para boletas de pago)
+            List<PreferencePaymentTypeRequest> excludedPaymentTypes = new ArrayList<>();
+            excludedPaymentTypes.add(PreferencePaymentTypeRequest.builder().id("ticket").build());
+
+            PreferencePaymentMethodsRequest paymentMethods = PreferencePaymentMethodsRequest.builder()
+                    .excludedPaymentTypes(excludedPaymentTypes)
+                    .installments(1) // Número de cuotas permitidas
+                    .build();
+
+            // Construye la solicitud de preferencia completa para Mercado Pago
+            PreferenceRequest preferenceRequest = PreferenceRequest.builder()
+                    .items(items)
+                    .payer(payer)
+                    .backUrls(backUrls)
+                    .paymentMethods(paymentMethods)
+                    .autoReturn(requestDTO.getAuto_return())
+                    .externalReference(externalReference)
+                    .shipments(PreferenceShipmentsRequest.builder()
+                            .cost(requestDTO.getShippingCost())
+                            .mode("not_specified")
+                            .build())
+                    .metadata(Map.of("orden_compra_id", ordenCompra.getId()))
+                    .build();
+
+            // 6. Crea la preferencia en Mercado Pago
+            PreferenceClient client = new PreferenceClient();
+            Preference preference = client.create(preferenceRequest);
+
+            // 7. Actualiza la Orden de Compra en tu base de datos con el ID de la preferencia de Mercado Pago
+            ordenCompra.setMercadopagoPreferenceId(preference.getId());
+            try {
+                ordenCompraService.actualizar(ordenCompra);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Error al actualizar la orden con el ID de preferencia de Mercado Pago: " + e.getMessage());
+            }
+
+            // 8. Prepara la respuesta para el frontend
+            String prefId = preference.getId();
+            String initPoint = preference.getInitPoint();
+            System.out.println("URL de pago de Mercado Pago: " + initPoint);
+
+            return ResponseEntity.status(HttpStatus.OK).body("{\"preferenceId\":\"" + prefId + "\", \"initPoint\":\"" + initPoint + "\"}");
+
+        } catch (MPApiException mpEx) {
+            MPResponse response = mpEx.getApiResponse();
+            System.err.println("Status code de Mercado Pago: " + response.getStatusCode());
+            System.err.println("Response body de Mercado Pago: " + response.getContent());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error al crear la preferencia en Mercado Pago: " + response.getContent());
+
         } catch (Exception e) {
-            logger.error("Error inesperado en el controlador al crear preferencia: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error inesperado al procesar el pago: " + e.getMessage());
         }
-    }
-
-
-    @PostMapping("/webhook")
-    public ResponseEntity<?> handleMercadoPagoWebhook(
-            @RequestBody(required = false) String payload
-    ) {
-        logger.info("---- WEBHOOK DE MERCADO PAGO RECIBIDO ----");
-        logger.info("Payload: {}", payload != null && payload.length() > 500 ? payload.substring(0, 500) + "..." : payload);
-
-        String id = null;
-        String topic = null;
-
-        if (payload != null && !payload.isEmpty()) {
-            try {
-                JsonNode rootNode = objectMapper.readTree(payload);
-
-                // Intentar obtener 'id' y 'topic' del formato "payment.created"
-                if (rootNode.has("data") && rootNode.get("data").has("id")) {
-                    id = rootNode.get("data").get("id").asText(); // ID del pago
-                    if (rootNode.has("type")) {
-                        topic = rootNode.get("type").asText(); // Tipo de evento (e.g., "payment")
-                    }
-                } else if (rootNode.has("resource") && rootNode.has("topic")) {
-                    // Intentar obtener 'id' y 'topic' del formato "merchant_order"
-                    // Para merchant_order, el ID relevante está en la URL del recurso
-                    String resourceUrl = rootNode.get("resource").asText();
-                    // Extraer el ID del final de la URL, por ejemplo: /merchant_orders/31385300497 -> 31385300497
-                    int lastSlashIndex = resourceUrl.lastIndexOf('/');
-                    if (lastSlashIndex != -1 && lastSlashIndex < resourceUrl.length() - 1) {
-                        id = resourceUrl.substring(lastSlashIndex + 1);
-                    }
-                    topic = rootNode.get("topic").asText(); // Tipo de evento (e.g., "merchant_order")
-                } else if (rootNode.has("id") && rootNode.get("id").isTextual() && rootNode.has("topic") && rootNode.get("topic").isTextual()) {
-                    // Esto es un fallback por si el formato es simplemente { "id": "...", "topic": "..." }
-                    id = rootNode.get("id").asText();
-                    topic = rootNode.get("topic").asText();
-                }
-
-                logger.info("Payload parseado - ID: {}, Topic: {}", id, topic);
-
-            } catch (Exception e) {
-                logger.error("Error al parsear el payload del webhook: {}", e.getMessage(), e);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al parsear el payload del webhook.");
-            }
-        }
-
-        // El resto de la lógica permanece igual
-        if (id == null || topic == null) {
-            logger.warn("Webhook recibido sin ID o Topic válido en el payload. Ignorando.");
-            return ResponseEntity.badRequest().body("ID o Topic ausente en la notificación.");
-        }
-
-        if ("payment".equalsIgnoreCase(topic)) {
-            try {
-                ordenCompraService.procesarNotificacionPagoMP(id);
-                logger.info("Webhook de pago procesado exitosamente para el ID de pago: {}", id);
-                return ResponseEntity.ok("Webhook de pago procesado exitosamente.");
-            } catch (Exception e) {
-                logger.error("Error procesando webhook de pago para ID {}: {}", id, e.getMessage(), e);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error procesando webhook de pago.");
-            }
-        } else if ("merchant_order".equalsIgnoreCase(topic)) {
-            logger.info("Webhook recibido con topic 'merchant_order'. No se procesa a nivel de orden de compra, pero se reconoce. ID de Merchant Order: {}", id);
-            // Aquí podrías agregar lógica para merchant_order si la necesitas,
-            // por ejemplo, para unificar información de una merchant_order con pagos asociados.
-            // Por ahora, simplemente lo ignoramos pero lo logueamos como reconocido.
-            return ResponseEntity.ok("Webhook de merchant_order recibido, pero no se procesa en este endpoint.");
-        }
-        else {
-            logger.info("Webhook recibido con topic '{}'. No es un topic de pago ni merchant_order, ignorando.", topic);
-            return ResponseEntity.ok("Webhook recibido, pero no es una notificación de pago o merchant_order relevante.");
-        }
-    }
-
-    // El endpoint /feedback permanece igual
-    @GetMapping("/feedback")
-    public ResponseEntity<?> handlePaymentFeedback(
-            @RequestParam(name = "collection_id", required = false) String collectionId,
-            @RequestParam(name = "collection_status", required = false) String collectionStatus,
-            @RequestParam(name = "external_reference", required = false) String externalReference,
-            @RequestParam(name = "payment_id", required = false) String paymentId,
-            @RequestParam(name = "status", required = false) String status,
-            @RequestParam(name = "preference_id", required = false) String preferenceId
-    ) {
-        logger.info("Recibido feedback de pago de Mercado Pago (Redirección). Parámetros: collection_id={}, collection_status={}, external_reference={}, payment_id={}, status={}",
-                collectionId, collectionStatus, externalReference, paymentId, status);
-
-        if (externalReference != null && !externalReference.isEmpty()) {
-            try {
-                OrdenCompra orden = ordenCompraService.buscarPorId(Long.valueOf(externalReference));
-                if (orden != null) {
-                    OrdenCompraDTO ordenDTO = ordenCompraService.mapOrdenCompraToDTO(orden);
-                    return ResponseEntity.ok().body(ordenDTO);
-                }
-            } catch (NumberFormatException e) {
-                logger.warn("external_reference no es un ID numérico válido: {}", externalReference);
-            } catch (Exception e) {
-                logger.error("Error al buscar orden por external_reference {}: {}", externalReference, e.getMessage());
-            }
-        }
-
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "El estado de tu pago está siendo procesado. Revisa tus pedidos para la confirmación final.");
-        response.put("collection_status", collectionStatus != null ? collectionStatus : status);
-        response.put("external_reference", externalReference);
-        return ResponseEntity.ok(response);
     }
 }

@@ -1,42 +1,33 @@
 package com.ecommerce.ecommerce.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.Getter;
+import lombok.Setter;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter
+@Setter
 public class MercadoPagoPreferenceRequestDTO {
-
-    private List<MercadoPagoItemDTO> items;
-    private String shippingOption;
-    private BigDecimal shippingCost; // <-- Debe ser BigDecimal
-    private String buyerPhoneNumber;
+    private List<MercadoPagoItemRequestDTO> items;
+    private String external_reference;
+    private Long userId;
     private String payerName;
     private String payerLastName;
     private String payerEmail;
-
-    // --- CAMPOS PARA LA ORDEN DE COMPRA ---
-    private Long userId;
-    private String shippingAddress;
+    private String buyerPhoneNumber;
+    private String shippingOption;
+    private BigDecimal shippingCost;
+    private Map<String, String> back_urls;
+    private String auto_return;
+    private BigDecimal montoTotal;
     private Long direccionId;
     private DireccionDTO nuevaDireccion;
-    private BigDecimal montoTotal;      // <-- Debe ser BigDecimal
-    // --- FIN CAMPOS PARA LA ORDEN DE COMPRA ---
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class BackUrlsDTO {
-        private String success;
-        private String failure;
-        private String pending;
-    }
+    // ****** ¡AQUÍ ESTÁ EL CAMBIO QUE NECESITAS! ******
+    private List<OrdenCompraDetalleDTO> detalles; // Cambiado de CreateOrdenCompraDetalleDTO
+    // *************************************************
+
+    private String notification_url;
+    private String direccionEnvio; // Mantener si el front lo envía, aunque no se use directamente en crearOrdenInicial
 }

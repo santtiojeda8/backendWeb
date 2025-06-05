@@ -8,5 +8,7 @@ public enum EstadoOrdenCompra {
     CANCELADA,          // Orden cancelada (ej. por el usuario o administrador)
     EN_PROCESO,         // Pago aprobado, la orden está siendo preparada
     ENVIADA,            // La orden ha sido enviada
-    ENTREGADA           // La orden ha sido entregada
+    ENTREGADA,
+    CONTRACARGO,
+    REEMBOLSADA// La orden ha sido entregada
 }
