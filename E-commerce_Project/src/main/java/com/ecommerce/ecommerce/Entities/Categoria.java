@@ -1,8 +1,11 @@
 package com.ecommerce.ecommerce.Entities;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.JsonBackReference; // <-- Importar JsonBackReference
+// import com.fasterxml.jackson.annotation.JsonManagedReference; // Eliminar si no se usa más
+// import com.fasterxml.jackson.annotation.JsonBackReference; // Eliminar si no se usa más
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore; // Asegúrate de que esta esté importada
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -21,21 +24,20 @@ public class Categoria extends Base{
     @Column(name="denominacion")
     private String denominacion;
 
-    // Relación Categoria <-> Categoria (Padre-Hijo)
     @ManyToOne
     @JoinColumn(name = "categoria_padre_id")
-    @JsonBackReference("categoria-parent-child") // <-- Añadir JsonBackReference (con un nombre opcional para desambiguar si hay varios ciclos)
+    @JsonBackReference("categoria-parent-child") // Este uso de JsonBackReference y ManagedReference está bien para OneToMany/ManyToOne
     private Categoria categoriaPadre;
 
     @OneToMany(mappedBy = "categoriaPadre", cascade = CascadeType.ALL)
     @Builder.Default
-    @JsonManagedReference("categoria-parent-child") // <-- Asegúrate de que el nombre coincida con el lado BackReference
+    @JsonManagedReference("categoria-parent-child") // Este uso está bien para OneToMany/ManyToOne
     private Set<Categoria> subcategorias = new HashSet<>();
 
-    // Relación Categoria <-> Producto
-    @ManyToMany(mappedBy = "categorias") // Mapea al campo 'categorias' en la entidad Producto
+    // Relación Categoria <-> Producto (ManyToMany)
+    @ManyToMany(mappedBy = "categorias")
     @Builder.Default
-    @JsonBackReference("producto-categorias") // <-- ¡CAMBIAR A JsonBackReference! (con un nombre para coincidir con el lado Managed)
+    @JsonIgnore // <-- ¡CAMBIO AQUÍ! Para ManyToMany, usa @JsonIgnore en ambos lados o DTOs.
     private Set<Producto> productos = new HashSet<>();
 
 }

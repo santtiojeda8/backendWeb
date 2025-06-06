@@ -33,20 +33,34 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(withDefaults()) // Asegúrate de que esta configuración CORS se aplica correctamente
+                .cors(withDefaults())
 
                 .authorizeHttpRequests(auth -> auth
-                        // 1. **MÁS ESPECÍFICO Y PRIMERO**: Autenticación y Registro (POST)
+                        .requestMatchers(OPTIONS, "/**").permitAll()
+
+                        // 1. Rutas de Autenticación y Registro (Públicas)
                         .requestMatchers(POST, "/auth/register").permitAll()
                         .requestMatchers(POST, "/auth/login").permitAll()
 
-                        // Permite PUT en /auth/profile (necesita autenticación)
+                        // --- REGLA CORREGIDA PARA MERCADO PAGO ---
+                        // Permite la creación de preferencias de Mercado Pago para todos (público)
+                        .requestMatchers(POST, "/api/mercadopago/create-preference").permitAll() // <-- CAMBIO AQUÍ
+                        // Si tienes un endpoint para recibir webhooks de MP, también debería ser público:
+                        .requestMatchers(POST, "/api/mercadopago/webhook").permitAll() // <-- ASUMIENDO /api/
+                        // Si tienes un endpoint para actualizar el estado de la orden DESDE EL FRONTEND
+                        // tras el retorno de MP, también podría ser público o requerir autenticación
+                        // si solo los usuarios logueados pueden ver sus órdenes:
+                        .requestMatchers(POST, "/api/ordenes/{id}/actualizar-estado-pago").permitAll() // <-- ASUMIENDO /api/
+                        // ------------------------------------
+
+                        // 2. Rutas del Perfil de Usuario Autenticado (Requieren Token JWT)
+                        .requestMatchers(GET, "/auth/me").authenticated()
+                        .requestMatchers(POST, "/auth/profile/upload-image").authenticated()
                         .requestMatchers(PUT, "/auth/profile").authenticated()
+                        .requestMatchers(PATCH, "/auth/update-credentials").authenticated()
+                        .requestMatchers(DELETE, "/auth/deactivate").authenticated()
 
-                        // Para el GET del propio perfil (si lo usas)
-                        .requestMatchers(GET, "/auth/profile").authenticated()
-
-                        // 2. Rutas de Swagger/API Docs (GET, etc.)
+                        // 3. Rutas de Swagger/API Docs (Públicas)
                         .requestMatchers(
                                 "/v2/api-docs",
                                 "/v3/api-docs",
@@ -60,30 +74,40 @@ public class SecurityConfig {
                                 "/swagger-ui.html")
                         .permitAll()
 
-
+                        // 4. Rutas de Archivos de Subida (Públicas, para acceder a las imágenes)
                         .requestMatchers("/uploads/**").permitAll()
 
-
-                        // 3. Rutas de productos (GET, etc.) que no requieren autenticación
-                        .requestMatchers(GET,"/productos").permitAll()
+                        // 5. Rutas de Productos (Públicas)
+                        .requestMatchers(GET,"/productos/**").permitAll()
+                        .requestMatchers(GET,"/colores/**").permitAll()
+                        .requestMatchers(GET,"/talles/**").permitAll()
                         .requestMatchers(GET,"/productos/categorias").permitAll()
                         .requestMatchers(GET,"/productos/colores").permitAll()
                         .requestMatchers(GET,"/productos/talles").permitAll()
                         .requestMatchers(GET,"/productos/filtrar").permitAll()
-                        .requestMatchers(POST,"/productos/filtrar").permitAll() // Si /productos/filtrar es POST público
+                        .requestMatchers(POST,"/productos/filtrar").permitAll()
                         .requestMatchers(GET, "/productos/dto").permitAll()
                         .requestMatchers(GET, "/productos/dto/promociones").permitAll()
                         .requestMatchers(GET, "/productos/dto/{id}").permitAll()
                         .requestMatchers(GET, "/productos/buscar").permitAll()
+
+                        // 6. Rutas de Categorías, Localidades, Provincias (Públicas)
                         .requestMatchers(GET, "/categorias/**").permitAll()
                         .requestMatchers(GET, "/localidades/**").permitAll()
                         .requestMatchers(GET, "/provincias/**").permitAll()
 
-                        // 4. **ÚLTIMO Y MÁS GENERAL**: Cualquier otra solicitud REQUIERE autenticación
+                        // 7. Rutas de ProductoDetalle (Públicas)
+                        .requestMatchers(GET, "/producto_detalle/buscar").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/producto/{productoId}").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/stock-mayor-a/{stockMinimo}").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/filtrar").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/talles/{productoId}").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/colores/{productoId}").permitAll()
+                        .requestMatchers(GET, "/producto_detalle/disponible").permitAll()
+
+                        // 8. Cualquier otra solicitud REQUIERE autenticación.
                         .anyRequest().authenticated()
                 )
-
-                // ... (el resto de tu configuración es correcta)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -91,22 +115,16 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // CORS Configuration (parece correcta, pero la revisamos para asegurar)
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Asegúrate de que este origen sea EXACTAMENTE el de tu frontend
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
-        // Lista explícita de métodos. OPTIONS es crucial para preflight requests de CORS
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        // Permite todos los headers, incluyendo Content-Type y Authorization. Esto es importante.
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173","https://localhost:5173"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        // Permite credenciales (cookies, headers de autenticación). Necesario para enviar el JWT.
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Aplica a todas las rutas
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
 }

@@ -11,5 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ImagenDTO {
     private Long id;
-    private String url; // Corresponde a 'denominacion' en la entidad Imagen
+    private String url; // Corresponds to 'denominacion' in the Imagen entity
+    private boolean activo; // Crucial for consistency
 }

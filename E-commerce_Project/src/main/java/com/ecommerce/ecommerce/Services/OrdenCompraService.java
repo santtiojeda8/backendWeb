@@ -1,86 +1,568 @@
 package com.ecommerce.ecommerce.Services;
 
+import com.ecommerce.ecommerce.Entities.Direccion;
+import com.ecommerce.ecommerce.Entities.Localidad;
 import com.ecommerce.ecommerce.Entities.OrdenCompra;
 import com.ecommerce.ecommerce.Entities.OrdenCompraDetalle;
+import com.ecommerce.ecommerce.Entities.ProductoDetalle;
+import com.ecommerce.ecommerce.Entities.Provincia;
+import com.ecommerce.ecommerce.Entities.Usuario;
+import com.ecommerce.ecommerce.Entities.enums.EstadoOrdenCompra;
+import com.ecommerce.ecommerce.Repositories.DireccionRepository;
+import com.ecommerce.ecommerce.Repositories.LocalidadRepository;
+import com.ecommerce.ecommerce.Repositories.OrdenCompraDetalleRepository;
 import com.ecommerce.ecommerce.Repositories.OrdenCompraRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.stereotype.Service;
+import com.ecommerce.ecommerce.Repositories.ProductoDetalleRepository;
+import com.ecommerce.ecommerce.Repositories.ProvinciaRepository;
+import com.ecommerce.ecommerce.Repositories.UsuarioRepository;
+import com.ecommerce.ecommerce.dto.DireccionDTO;
+import com.ecommerce.ecommerce.dto.LocalidadDTO;
+import com.ecommerce.ecommerce.dto.OrdenCompraDTO;
+import com.ecommerce.ecommerce.dto.OrdenCompraDetalleDTO;
+import com.ecommerce.ecommerce.dto.ProvinciaDTO;
+import com.ecommerce.ecommerce.dto.UserDTO;
 
+import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set; // Importar Set
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
 
-    private final OrdenCompraRepository ordenCompraRepository;
+    private static final Logger logger = LoggerFactory.getLogger(OrdenCompraService.class);
 
-    public OrdenCompraService(OrdenCompraRepository ordenCompraRepository) {
+    // ELIMINADAS CONSTANTES RELACIONADAS CON REINTENTOS DE MP
+    // private static final int MAX_RETRIES = 5;
+    // private static final long RETRY_DELAY_MS = 5000;
+
+    private final OrdenCompraRepository ordenCompraRepository;
+    private final OrdenCompraDetalleRepository ordenCompraDetalleRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final ProductoDetalleRepository productoDetalleRepository;
+    private final DireccionRepository direccionRepository;
+    private final LocalidadRepository localidadRepository;
+    private final ProvinciaRepository provinciaRepository;
+    private final OrdenCompraDetalleService ordenCompraDetalleService;
+    // ELIMINADO: private final PaymentClient paymentClient;
+
+    @Autowired
+    public OrdenCompraService(OrdenCompraRepository ordenCompraRepository,
+                              OrdenCompraDetalleRepository ordenCompraDetalleRepository,
+                              UsuarioRepository usuarioRepository,
+                              ProductoDetalleRepository productoDetalleRepository,
+                              DireccionRepository direccionRepository,
+                              LocalidadRepository localidadRepository,
+                              ProvinciaRepository provinciaRepository,
+                              OrdenCompraDetalleService ordenCompraDetalleService
+                              // ELIMINADO paymentClient del constructor
+    ) {
         super(ordenCompraRepository);
         this.ordenCompraRepository = ordenCompraRepository;
+        this.ordenCompraDetalleRepository = ordenCompraDetalleRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.productoDetalleRepository = productoDetalleRepository;
+        this.direccionRepository = direccionRepository;
+        this.localidadRepository = localidadRepository;
+        this.provinciaRepository = provinciaRepository;
+        this.ordenCompraDetalleService = ordenCompraDetalleService;
+        // ELIMINADO: this.paymentClient = paymentClient;
     }
 
-    @Override
-    @Transactional // Asegura que la operación sea atómica
-    public OrdenCompra crear(OrdenCompra ordenCompra) throws Exception {
-        try {
-            if (ordenCompra.getFechaCompra() == null) {
-                ordenCompra.setFechaCompra(LocalDateTime.now());
-            }
-
-            // Validar que haya detalles antes de procesar
-            if (ordenCompra.getDetalles() == null || ordenCompra.getDetalles().isEmpty()) {
-                throw new Exception("La orden debe tener al menos un producto.");
-            }
-
-            // --- Lógica Modificada ---
-            // Iteramos sobre una copia del conjunto de detalles para evitar ConcurrentModificationException
-            // si la colección original es modificada durante la iteración (aunque addDetalle modifica la original,
-            // es más seguro iterar sobre una copia si la colección original viene de fuera).
-            // Opcional: Si estás seguro de que el Set recibido no será modificado externamente,
-            // puedes iterar directamente sobre ordenCompra.getDetalles().
-            Set<OrdenCompraDetalle> detallesOriginales = ordenCompra.getDetalles();
-            ordenCompra.setDetalles(new HashSet<>()); // Limpiamos el set original para usar addDetalle
-
-            for (OrdenCompraDetalle detalle : detallesOriginales) {
-                // Usamos el método addDetalle de la entidad OrdenCompra
-                // Este método establece la relación bidireccional (detalle.setOrdenCompra(ordenCompra))
-                // Y llama a recalcularTotal() en la orden.
-                // El subtotal del detalle se calculará automáticamente con @PrePersist
-                ordenCompra.addDetalle(detalle);
-            }
-
-            // El total de la orden ya fue calculado por addDetalle y se recalculará
-            // una última vez por el @PrePersist/@PreUpdate en la entidad OrdenCompra
-            // justo antes de guardar. No necesitamos calcularlo manualmente aquí.
-            // ordenCompra.setTotal(totalCalculado); <-- Eliminar esta línea
-
-            // La asignación de referencia de orden a cada detalle ya la hace addDetalle
-            // for (OrdenCompraDetalle detalle : ordenCompra.getDetalles()) { <-- Eliminar este bucle
-            //     detalle.setOrdenCompra(ordenCompra);
-            // }
-
-            // Guardar la orden (esto persistirá la orden y en cascada sus detalles)
-            return super.crear(ordenCompra);
-
-        } catch (Exception e) {
-            // Es buena práctica loggear la excepción original
-            // logger.error("Error al crear orden de compra", e);
-            throw new Exception("Error al crear la orden de compra: " + e.getMessage());
+    // --- Métodos de Mapeo de Entidad a DTO ---
+    public OrdenCompraDTO mapOrdenCompraToDTO(OrdenCompra ordenCompra) {
+        if (ordenCompra == null) {
+            return null;
         }
-    }
 
-    @Transactional // Añadir @Transactional si no está en BaseService
-    public List<OrdenCompra> obtenerPorFecha(LocalDateTime fecha) throws Exception {
-        try {
-            return ordenCompraRepository.findAllByFechaCompra(fecha);
-        } catch (Exception e) {
-            // logger.error("Error al obtener ordenes por fecha", e);
-            throw new Exception("Error al obtener ordenes por fecha: " + e.getMessage());
+        List<OrdenCompraDetalleDTO> detalleDTOs = null;
+        if (ordenCompra.getDetalles() != null) {
+            detalleDTOs = ordenCompra.getDetalles().stream()
+                    .map(ordenCompraDetalleService::mapOrdenCompraDetalleToDTO)
+                    .collect(Collectors.toList());
         }
+
+        UserDTO usuarioDTO = null;
+        Long usuarioIdFromEntity = null;
+        if (ordenCompra.getUsuario() != null) {
+            usuarioDTO = mapUsuarioToUserDTO(ordenCompra.getUsuario());
+            usuarioIdFromEntity = ordenCompra.getUsuario().getId();
+        }
+
+        DireccionDTO direccionDTO = null;
+        if(ordenCompra.getDireccion() != null){
+            direccionDTO = mapDireccionToDTO(ordenCompra.getDireccion());
+        }
+
+        return OrdenCompraDTO.builder()
+                .id(ordenCompra.getId())
+                .total(ordenCompra.getTotal())
+                .fechaCompra(ordenCompra.getFechaCompra())
+                .direccionEnvio(ordenCompra.getDireccionEnvio()) // Este campo podría ser redundante si ya se usa direccionAsociada
+                .detalles(detalleDTOs)
+                .usuarioId(usuarioIdFromEntity)
+                .estadoOrden(ordenCompra.getEstadoOrden() != null ? ordenCompra.getEstadoOrden().name() : null)
+                .mercadopagoPreferenceId(ordenCompra.getMercadopagoPreferenceId())
+                .mercadopagoPaymentId(ordenCompra.getMercadopagoPaymentId())
+                .shippingOption(ordenCompra.getTipoEnvio())
+                .shippingCost(ordenCompra.getCostoEnvio())
+                .buyerPhoneNumber(ordenCompra.getTelefono())
+                .direccionId(ordenCompra.getDireccion() != null ? ordenCompra.getDireccion().getId() : null)
+                .nuevaDireccion(direccionDTO)
+                .build();
     }
 
-    // Si tienes otros métodos para actualizar la orden (ej. añadir/quitar detalles después de la creación)
-    // también deberías usar addDetalle/removeDetalle en esos métodos.
+    // Helper method for mapping Usuario to UserDTO
+    private UserDTO mapUsuarioToUserDTO(Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+        return UserDTO.builder()
+                .id(usuario.getId())
+                .firstname(usuario.getNombre())
+                .lastname(usuario.getApellido())
+                .email(usuario.getEmail())
+                .username(usuario.getUsername())
+                .build();
+    }
+
+    // --- Helper method for mapping Direccion Entity to DireccionDTO ---
+    private DireccionDTO mapDireccionToDTO(Direccion entity) {
+        if (entity == null) return null;
+        LocalidadDTO localidadDTO = null;
+        if (entity.getLocalidad() != null) {
+            localidadDTO = mapLocalidadToDTO(entity.getLocalidad());
+        }
+        return DireccionDTO.builder()
+                .id(entity.getId())
+                .calle(entity.getCalle())
+                .numero(entity.getNumero())
+                .piso(entity.getPiso())
+                .departamento(entity.getDepartamento())
+                .cp(entity.getCp())
+                .localidad(localidadDTO)
+                .build();
+    }
+
+    // --- Helper method for mapping Localidad Entity to LocalidadDTO ---
+    private LocalidadDTO mapLocalidadToDTO(Localidad entity) {
+        if (entity == null) return null;
+        ProvinciaDTO provinciaDTO = null;
+        if (entity.getProvincia() != null) {
+            provinciaDTO = mapProvinciaToDTO(entity.getProvincia());
+        }
+        return LocalidadDTO.builder()
+                .id(entity.getId())
+                .nombre(entity.getNombre())
+                .provincia(provinciaDTO)
+                .build();
+    }
+
+    // --- Helper method for mapping Provincia Entity to ProvinciaDTO ---
+    private ProvinciaDTO mapProvinciaToDTO(Provincia entity) {
+        if (entity == null) return null;
+        return ProvinciaDTO.builder()
+                .id(entity.getId())
+                .nombre(entity.getNombre())
+                .build();
+    }
+
+    private Direccion mapDireccionDTOToEntity(DireccionDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+
+        Direccion direccion = Direccion.builder()
+                .id(dto.getId())
+                .calle(dto.getCalle())
+                .numero(dto.getNumero())
+                .piso(dto.getPiso())
+                .departamento(dto.getDepartamento())
+                .cp(dto.getCp())
+                .activo(true)
+                .build();
+
+        if (dto.getLocalidad() != null && dto.getLocalidad().getNombre() != null) {
+            Localidad localidad = null;
+
+            if (dto.getLocalidad().getId() != null) {
+                localidad = localidadRepository.findByIdAndActivoTrue(dto.getLocalidad().getId()).orElse(null);
+            }
+
+            if (localidad == null) {
+                final Provincia provinciaParaLocalidad;
+
+                if (dto.getLocalidad().getProvincia() != null && dto.getLocalidad().getProvincia().getNombre() != null) {
+                    provinciaParaLocalidad = provinciaRepository.findByNombreAndActivoTrue(dto.getLocalidad().getProvincia().getNombre())
+                            .orElseGet(() -> {
+                                Provincia newProvincia = Provincia.builder()
+                                        .nombre(dto.getLocalidad().getProvincia().getNombre())
+                                        .activo(true)
+                                        .build();
+                                return provinciaRepository.save(newProvincia);
+                            });
+                } else {
+                    throw new IllegalArgumentException("Provincia es requerida para la localidad.");
+                }
+
+                localidad = localidadRepository.findByNombreAndProvinciaAndActivoTrue(dto.getLocalidad().getNombre(), provinciaParaLocalidad)
+                        .orElseGet(() -> {
+                            Localidad newLocalidad = Localidad.builder()
+                                    .nombre(dto.getLocalidad().getNombre())
+                                    .provincia(provinciaParaLocalidad)
+                                    .activo(true)
+                                    .build();
+                            return localidadRepository.save(newLocalidad);
+                        });
+            }
+            direccion.setLocalidad(localidad);
+        } else {
+            throw new IllegalArgumentException("Localidad es requerida para un domicilio.");
+        }
+        return direccion;
+    }
+
+
+    // --- Métodos CRUD con DTOs ---
+
+    @Transactional(readOnly = true)
+    public List<OrdenCompraDTO> findAllDTO() throws Exception {
+        return ordenCompraRepository.findAllByActivoTrue()
+                .stream()
+                .map(this::mapOrdenCompraToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public OrdenCompraDTO findByIdDTO(Long id) throws Exception {
+        OrdenCompra entity = super.buscarPorId(id);
+        return mapOrdenCompraToDTO(entity);
+    }
+
+    @Transactional
+    public OrdenCompra saveOrdenCompraFromDTO(OrdenCompraDTO dto) throws Exception {
+        OrdenCompra newOrden = new OrdenCompra();
+        newOrden.setFechaCompra(LocalDateTime.now());
+        newOrden.setFechaActualizacionEstado(LocalDateTime.now());
+        newOrden.setEstadoOrden(EstadoOrdenCompra.PENDIENTE_PAGO); // Initial state
+        newOrden.setActivo(true);
+
+        if (dto.getUsuarioId() != null) {
+            Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + dto.getUsuarioId()));
+            newOrden.setUsuario(usuario);
+        } else {
+            throw new IllegalArgumentException("ID de usuario es obligatorio para crear una orden de compra.");
+        }
+
+        // Handle shipping details and address
+        newOrden.setTipoEnvio(dto.getShippingOption());
+        newOrden.setCostoEnvio(dto.getShippingCost());
+        newOrden.setTelefono(dto.getBuyerPhoneNumber());
+        newOrden.setDireccionEnvio(dto.getDireccionEnvio()); // Si este campo no se usa, considerar eliminarlo
+
+        if (dto.getDireccionId() != null) {
+            Direccion existingDireccion = direccionRepository.findByIdAndActivoTrue(dto.getDireccionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Dirección existente no encontrada o inactiva con ID: " + dto.getDireccionId()));
+            newOrden.setDireccion(existingDireccion);
+        } else if (dto.getNuevaDireccion() != null) {
+            Direccion newDireccionEntity = mapDireccionDTOToEntity(dto.getNuevaDireccion());
+            // Asociar el usuario a la nueva dirección antes de guardarla
+            if (newOrden.getUsuario() != null) {
+                newDireccionEntity.setUsuario(newOrden.getUsuario());
+            }
+            newOrden.setDireccion(direccionRepository.save(newDireccionEntity));
+        }
+
+        // Calculate total from details and set it
+        BigDecimal calculatedTotal = BigDecimal.ZERO;
+        if (dto.getDetalles() != null && !dto.getDetalles().isEmpty()) {
+            for (OrdenCompraDetalleDTO detalleDTO : dto.getDetalles()) {
+                ProductoDetalle productoDetalle = productoDetalleRepository.findById(detalleDTO.getProductoDetalleId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Producto Detalle no encontrado con ID: " + detalleDTO.getProductoDetalleId()));
+
+                if (productoDetalle.getStockActual() < detalleDTO.getCantidad()) {
+                    throw new IllegalArgumentException("Stock insuficiente para el producto: " + productoDetalle.getProducto().getDenominacion());
+                }
+
+                OrdenCompraDetalle detalle = ordenCompraDetalleService.mapDTOToOrdenCompraDetalle(detalleDTO);
+                detalle.setOrdenCompra(newOrden);
+                // Subtotal will be calculated by @PrePersist in OrdenCompraDetalle
+
+                // Add to order details list
+                newOrden.addDetalle(detalle);
+
+                calculatedTotal = calculatedTotal.add(detalle.getPrecioUnitario().multiply(new BigDecimal(detalle.getCantidad())));
+
+                // Decrease stock
+                productoDetalle.setStockActual(productoDetalle.getStockActual() - detalleDTO.getCantidad());
+                productoDetalleRepository.save(productoDetalle);
+            }
+        } else {
+            throw new IllegalArgumentException("Una orden de compra debe tener al menos un detalle.");
+        }
+
+        // Add shipping cost to total if applicable
+        if (newOrden.getCostoEnvio() != null) {
+            calculatedTotal = calculatedTotal.add(newOrden.getCostoEnvio());
+        }
+        newOrden.setTotal(calculatedTotal);
+
+        return ordenCompraRepository.save(newOrden);
+    }
+
+    @Transactional
+    public OrdenCompra updateOrdenCompraFromDTO(Long id, OrdenCompraDTO dto) throws Exception {
+        OrdenCompra entityToUpdate = super.buscarPorId(id);
+        if (entityToUpdate == null) {
+            throw new ResourceNotFoundException("Orden de compra no encontrada para actualizar con ID: " + id);
+        }
+
+        // Update fields from DTO
+        entityToUpdate.setTotal(dto.getTotal() != null ? dto.getTotal() : entityToUpdate.getTotal());
+        entityToUpdate.setDireccionEnvio(dto.getDireccionEnvio() != null ? dto.getDireccionEnvio() : entityToUpdate.getDireccionEnvio());
+        entityToUpdate.setTipoEnvio(dto.getShippingOption() != null ? dto.getShippingOption() : entityToUpdate.getTipoEnvio());
+        entityToUpdate.setCostoEnvio(dto.getShippingCost() != null ? dto.getShippingCost() : entityToUpdate.getCostoEnvio());
+        entityToUpdate.setTelefono(dto.getBuyerPhoneNumber() != null ? dto.getBuyerPhoneNumber() : entityToUpdate.getTelefono());
+
+        // Update state if provided and different
+        if (dto.getEstadoOrden() != null && !entityToUpdate.getEstadoOrden().name().equalsIgnoreCase(dto.getEstadoOrden())) {
+            entityToUpdate.setEstadoOrden(EstadoOrdenCompra.valueOf(dto.getEstadoOrden().toUpperCase()));
+            entityToUpdate.setFechaActualizacionEstado(LocalDateTime.now());
+        }
+
+        // Update user if provided (careful: this changes the owner of the order)
+        if (dto.getUsuarioId() != null && (entityToUpdate.getUsuario() == null || !dto.getUsuarioId().equals(entityToUpdate.getUsuario().getId()))) {
+            Usuario newUsuario = usuarioRepository.findById(dto.getUsuarioId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + dto.getUsuarioId()));
+            entityToUpdate.setUsuario(newUsuario);
+        }
+
+        // Update address
+        if (dto.getDireccionId() != null && (entityToUpdate.getDireccion() == null || !dto.getDireccionId().equals(entityToUpdate.getDireccion().getId()))) {
+            Direccion newDireccion = direccionRepository.findByIdAndActivoTrue(dto.getDireccionId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Dirección existente no encontrada o inactiva con ID: " + dto.getDireccionId()));
+            entityToUpdate.setDireccion(newDireccion);
+        } else if (dto.getNuevaDireccion() != null) {
+            Direccion newDireccionEntity = mapDireccionDTOToEntity(dto.getNuevaDireccion());
+            // Asociar el usuario a la nueva dirección antes de guardarla
+            if (entityToUpdate.getUsuario() != null) {
+                newDireccionEntity.setUsuario(entityToUpdate.getUsuario());
+            }
+            entityToUpdate.setDireccion(direccionRepository.save(newDireccionEntity));
+        }
+
+        // Update details
+        if (dto.getDetalles() != null) {
+            Set<Long> incomingDetailIds = dto.getDetalles().stream()
+                    .map(OrdenCompraDetalleDTO::getId)
+                    .filter(java.util.Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            // Remove details that are no longer present
+            entityToUpdate.getDetalles().removeIf(existingDetail ->
+                    !incomingDetailIds.contains(existingDetail.getId()));
+
+            // Update or add new details
+            for (OrdenCompraDetalleDTO detalleDTO : dto.getDetalles()) {
+                if (detalleDTO.getId() != null) {
+                    Optional<OrdenCompraDetalle> existingDetailOpt = entityToUpdate.getDetalles().stream()
+                            .filter(d -> d.getId().equals(detalleDTO.getId()))
+                            .findFirst();
+
+                    if (existingDetailOpt.isPresent()) {
+                        OrdenCompraDetalle existingDetail = existingDetailOpt.get();
+                        existingDetail.setCantidad(detalleDTO.getCantidad());
+                        existingDetail.setPrecioUnitario(detalleDTO.getPrecioUnitario());
+                    } else {
+                        OrdenCompraDetalle newDetail = ordenCompraDetalleService.mapDTOToOrdenCompraDetalle(detalleDTO);
+                        newDetail.setOrdenCompra(entityToUpdate);
+                        entityToUpdate.addDetalle(newDetail);
+                    }
+                } else {
+                    OrdenCompraDetalle newDetail = ordenCompraDetalleService.mapDTOToOrdenCompraDetalle(detalleDTO);
+                    newDetail.setOrdenCompra(entityToUpdate);
+                    entityToUpdate.addDetalle(newDetail);
+                }
+            }
+        } else if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
+            entityToUpdate.getDetalles().clear();
+        }
+
+        return ordenCompraRepository.save(entityToUpdate);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrdenCompraDTO> obtenerPorFecha(LocalDateTime fecha) throws Exception {
+        LocalDateTime startOfDay = fecha.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = fecha.toLocalDate().atTime(23, 59, 59, 999_999_999);
+        List<OrdenCompra> entities = ordenCompraRepository.findByFechaCompraBetweenAndActivoTrue(startOfDay, endOfDay);
+        return entities.stream().map(this::mapOrdenCompraToDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrdenCompraDTO> obtenerPorUsuarioDTO(Long userId) throws Exception {
+        List<OrdenCompra> entities = ordenCompraRepository.findByUsuarioIdAndActivoTrue(userId);
+        if (entities.isEmpty()) {
+            throw new ResourceNotFoundException("No se encontraron órdenes de compra activas para el usuario ID: " + userId);
+        }
+        return entities.stream().map(this::mapOrdenCompraToDTO).collect(Collectors.toList());
+    }
+
+
+    /**
+     * Crea una orden de compra inicial en la base de datos con los datos proporcionados.
+     * Esta orden se establece en estado PENDIENTE_PAGO y su total se basa en el monto
+     * calculado externamente (ej. por MercadoPagoController antes de crear la preferencia).
+     *
+     * @param userId             ID del usuario que realiza la compra.
+     * @param buyerPhoneNumber   Número de teléfono del comprador.
+     * @param nuevaDireccionDTO  DTO con los datos de una nueva dirección (si aplica).
+     * @param direccionIdExistente ID de una dirección existente (si aplica).
+     * @param shippingOption     Opción de envío ("delivery" o "pickup").
+     * @param shippingCost       Costo del envío.
+     * @param montoTotalCalculado Monto total final de la orden (incluyendo envío).
+     * @param detallesDTO        Lista de detalles de la orden.
+     * @return La OrdenCompra creada y persistida.
+     * @throws Exception Si el usuario no se encuentra, hay problemas de stock o datos de dirección.
+     */
+    @Transactional
+    public OrdenCompra crearOrdenInicial(
+            Long userId,
+            String buyerPhoneNumber, // Se eliminó direccionEnvio (String) de aquí
+            DireccionDTO nuevaDireccionDTO,
+            Long direccionIdExistente,
+            String shippingOption,
+            BigDecimal shippingCost,
+            BigDecimal montoTotalCalculado,
+            List<OrdenCompraDetalleDTO> detallesDTO) throws Exception {
+
+        logger.info("Creando orden inicial para usuario ID: {}", userId); // Log de inicio
+
+        Usuario usuario = usuarioRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
+
+        Direccion direccionAsociada = null;
+        if ("delivery".equalsIgnoreCase(shippingOption)) {
+            if (direccionIdExistente != null) {
+                direccionAsociada = direccionRepository.findByIdAndActivoTrue(direccionIdExistente)
+                        .orElseThrow(() -> new ResourceNotFoundException("Direccion existente no encontrada o inactiva con ID: " + direccionIdExistente));
+                // Asegurar que la dirección existente esté asociada al usuario si no lo está
+                if (!usuario.getDirecciones().contains(direccionAsociada)) {
+                    usuario.addDireccion(direccionAsociada);
+                    usuarioRepository.save(usuario); // Guardar el usuario para actualizar la relación
+                    logger.info("Asociando dirección existente ID {} a usuario ID {}", direccionIdExistente, userId);
+                }
+            } else if (nuevaDireccionDTO != null) {
+                Direccion nuevaDireccionEntity = mapDireccionDTOToEntity(nuevaDireccionDTO);
+                nuevaDireccionEntity.setActivo(true);
+                nuevaDireccionEntity.setUsuario(usuario); // Asociar la nueva dirección al usuario
+                direccionAsociada = direccionRepository.save(nuevaDireccionEntity);
+
+                usuario.addDireccion(direccionAsociada);
+                usuarioRepository.save(usuario); // Guardar el usuario para actualizar la relación
+                logger.info("Creando y asociando nueva dirección a usuario ID {}", userId);
+            } else {
+                throw new IllegalArgumentException("Debe proporcionar una dirección existente (direccionId) o una nueva (nuevaDireccion) para envío a domicilio.");
+            }
+        }
+
+        OrdenCompra ordenCompra = new OrdenCompra();
+        ordenCompra.setFechaCompra(LocalDateTime.now());
+        ordenCompra.setFechaActualizacionEstado(LocalDateTime.now());
+        ordenCompra.setEstadoOrden(EstadoOrdenCompra.PENDIENTE_PAGO);
+        ordenCompra.setUsuario(usuario);
+        // ordenCompra.setDireccionEnvio(direccionEnvio); // Campo eliminado de la firma y aquí
+        ordenCompra.setTelefono(buyerPhoneNumber);
+        ordenCompra.setTipoEnvio(shippingOption);
+        ordenCompra.setCostoEnvio(shippingCost);
+        ordenCompra.setTotal(montoTotalCalculado); // Usar directamente el total calculado y enviado desde MercadoPagoController
+        ordenCompra.setDireccion(direccionAsociada);
+        ordenCompra.setActivo(true);
+
+        // --- Handle Order Details and Stock Management ---
+        for (OrdenCompraDetalleDTO detalleDTO : detallesDTO) {
+            ProductoDetalle productoDetalle = productoDetalleRepository.findById(detalleDTO.getProductoDetalleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Producto Detalle no encontrado con ID: " + detalleDTO.getProductoDetalleId()));
+
+            if (productoDetalle.getStockActual() < detalleDTO.getCantidad()) {
+                throw new IllegalArgumentException("Stock insuficiente para el producto: " + productoDetalle.getProducto().getDenominacion() + ". Stock actual: " + productoDetalle.getStockActual() + ", Cantidad solicitada: " + detalleDTO.getCantidad());
+            }
+
+            OrdenCompraDetalle detalle = ordenCompraDetalleService.mapDTOToOrdenCompraDetalle(detalleDTO);
+            detalle.setOrdenCompra(ordenCompra);
+
+            ordenCompra.addDetalle(detalle);
+
+            // Disminuir stock
+            productoDetalle.setStockActual(productoDetalle.getStockActual() - detalleDTO.getCantidad());
+            productoDetalleRepository.save(productoDetalle);
+            logger.info("Stock de ProductoDetalle ID {} disminuido en {}. Nuevo stock: {}", productoDetalle.getId(), detalleDTO.getCantidad(), productoDetalle.getStockActual());
+        }
+
+        OrdenCompra savedOrden = ordenCompraRepository.save(ordenCompra);
+        logger.info("Orden de compra ID {} creada exitosamente con estado PENDIENTE_PAGO.", savedOrden.getId());
+        return savedOrden;
+    }
+
+    /**
+     * Actualiza el estado de una orden de compra y el ID de pago de Mercado Pago.
+     * Este método será llamado desde el MercadoPagoController al recibir un webhook.
+     *
+     * @param ordenId    ID de la orden de compra a actualizar.
+     * @param nuevoEstado El nuevo estado de la orden.
+     * @param mpPaymentId El ID de pago de Mercado Pago asociado.
+     * @return La OrdenCompra actualizada.
+     * @throws ResourceNotFoundException Si la orden no se encuentra.
+     * @throws Exception                 En caso de otros errores.
+     */
+    @Transactional
+    public OrdenCompra actualizarEstadoOrdenYStock(Long ordenId, EstadoOrdenCompra nuevoEstado, String mpPaymentId) throws Exception {
+        logger.info("Actualizando estado de orden ID {} a {}. Payment ID: {}", ordenId, nuevoEstado, mpPaymentId);
+        OrdenCompra orden = super.buscarPorId(ordenId);
+        if (orden == null) {
+            throw new ResourceNotFoundException("Orden de compra no encontrada con ID: " + ordenId);
+        }
+
+        EstadoOrdenCompra estadoActual = orden.getEstadoOrden();
+
+        // Si el estado de la orden es diferente al nuevo estado recibido
+        if (!estadoActual.equals(nuevoEstado)) {
+            orden.setEstadoOrden(nuevoEstado);
+            orden.setFechaActualizacionEstado(LocalDateTime.now());
+            if (mpPaymentId != null && !mpPaymentId.isEmpty()) {
+                orden.setMercadopagoPaymentId(mpPaymentId);
+            }
+
+            // Lógica de gestión de stock basada en el cambio de estado
+            if (nuevoEstado == EstadoOrdenCompra.PAGADA && estadoActual != EstadoOrdenCompra.PAGADA) {
+                logger.info("Orden {} pasa a PAGADA. Stock ya fue descontado en la creación inicial.", orden.getId());
+            } else if (nuevoEstado == EstadoOrdenCompra.RECHAZADA && estadoActual != EstadoOrdenCompra.RECHAZADA) {
+                logger.warn("El pago de la orden {} fue RECHAZADO o similar. Revertiendo stock si se había descontado.", orden.getId());
+                for (OrdenCompraDetalle detalle : orden.getDetalles()) {
+                    ProductoDetalle productoDetalle = detalle.getProductoDetalle();
+                    if (productoDetalle != null) {
+                        productoDetalle.setStockActual(productoDetalle.getStockActual() + detalle.getCantidad());
+                        productoDetalleRepository.save(productoDetalle);
+                        logger.info("Stock de ProductoDetalle ID {} revertido en {}. Nuevo stock: {}",
+                                productoDetalle.getId(), detalle.getCantidad(), productoDetalle.getStockActual());
+                    }
+                }
+            }
+        }
+        // Guardar la orden solo si hubo un cambio de estado o de paymentId
+        OrdenCompra updatedOrden = ordenCompraRepository.save(orden);
+        logger.info("Orden de compra ID {} actualizada a estado {}.", updatedOrden.getId(), updatedOrden.getEstadoOrden());
+        return updatedOrden;
+    }
 }

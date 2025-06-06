@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import com.ecommerce.ecommerce.Entities.Usuario; // Importa tu entidad Usuario aquí
-import org.springframework.security.core.annotation.AuthenticationPrincipal; // Nueva importación para la opción más limpia
+import com.ecommerce.ecommerce.Entities.Usuario;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.HttpStatus; // Importar HttpStatus
 
 @RestController
 @RequestMapping("/auth")
@@ -37,59 +38,72 @@ public class AuthController {
         return ResponseEntity.ok(currentUser);
     }
 
-    // *** MÉTODO updateProfile CORREGIDO ***
     @PutMapping("/profile")
-    // Usar @AuthenticationPrincipal es la forma más limpia y recomendada
     public ResponseEntity<UserDTO> updateProfile(
             @RequestBody UserProfileUpdateDTO userProfileUpdateDTO,
-            @AuthenticationPrincipal Usuario usuarioAutenticado // Spring Security inyecta tu entidad Usuario
+            @AuthenticationPrincipal Usuario usuarioAutenticado
     ) throws Exception {
         if (usuarioAutenticado == null) {
             throw new IllegalStateException("No se pudo obtener el usuario autenticado.");
         }
-
-        // Obtener el ID directamente de la entidad Usuario inyectada
         Long userId = usuarioAutenticado.getId();
-
-        // Puedes añadir logs temporales para verificar si lo obtienes
         System.out.println("DEBUG: ID del usuario autenticado: " + userId);
         System.out.println("DEBUG: Username del usuario autenticado (email): " + usuarioAutenticado.getUsername());
-
         UserDTO updatedUser = usuarioService.updateProfile(userId, userProfileUpdateDTO);
         return ResponseEntity.ok(updatedUser);
     }
 
-    // *** MÉTODO uploadProfileImage CORREGIDO ***
     @PostMapping("/profile/upload-image")
     public ResponseEntity<UserDTO> uploadProfileImage(
             @RequestParam("file") MultipartFile file,
-            @AuthenticationPrincipal Usuario usuarioAutenticado // Inyecta tu entidad Usuario
+            @AuthenticationPrincipal Usuario usuarioAutenticado
     ) throws Exception {
         if (usuarioAutenticado == null) {
             throw new IllegalStateException("No se pudo obtener el usuario autenticado para subir la imagen.");
         }
-
         Long userId = usuarioAutenticado.getId();
         System.out.println("DEBUG: ID del usuario autenticado para imagen: " + userId);
-
         UserDTO updatedUser = usuarioService.uploadProfileImage(userId, file);
         return ResponseEntity.ok(updatedUser);
     }
 
-    // *** MÉTODO updateUserCredentials CORREGIDO ***
     @PatchMapping("/update-credentials")
     public ResponseEntity<UserDTO> updateUserCredentials(
             @RequestBody UpdateCredentialsRequest request,
-            @AuthenticationPrincipal Usuario usuarioAutenticado // Inyecta tu entidad Usuario
+            @AuthenticationPrincipal Usuario usuarioAutenticado
     ) throws Exception {
         if (usuarioAutenticado == null) {
             throw new IllegalStateException("No se pudo obtener el usuario autenticado para actualizar credenciales.");
         }
-
         Long userId = usuarioAutenticado.getId();
         System.out.println("DEBUG: ID del usuario autenticado para credenciales: " + userId);
-
         UserDTO updatedUser = usuarioService.updateCredentials(userId, request);
         return ResponseEntity.ok(updatedUser);
     }
+
+    // *** NUEVO ENDPOINT PARA DESACTIVAR LA CUENTA EN AUTHCONTROLLER ***
+    @DeleteMapping("/deactivate")
+    // @PreAuthorize("isAuthenticated()") // Ya está manejado por la configuración general de SecurityConfig si /auth/** es authenticated
+    public ResponseEntity<?> deactivateCurrentUserAccount(
+            @AuthenticationPrincipal Usuario usuarioAutenticado // Inyecta tu entidad Usuario
+    ) {
+        if (usuarioAutenticado == null) {
+            // Esto debería ser capturado por Spring Security antes de llegar aquí si no está autenticado
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario no autenticado.");
+        }
+        try {
+            Long userId = usuarioAutenticado.getId(); // Obtiene el ID del usuario autenticado directamente
+            usuarioService.deactivateAccount(userId);
+            return ResponseEntity.ok("Cuenta desactivada exitosamente. La sesión ha sido invalidada.");
+            // O, más apropiado para un DELETE sin contenido de respuesta:
+            // return ResponseEntity.noContent().build(); // Devuelve un 204 No Content
+        } catch (RuntimeException e) {
+            System.err.println("Error al desactivar la cuenta: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error inesperado al desactivar la cuenta: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error inesperado al desactivar la cuenta.");
+        }
+    }
+
 }

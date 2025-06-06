@@ -1,52 +1,50 @@
 package com.ecommerce.ecommerce.Controllers;
 
-import com.ecommerce.ecommerce.Entities.Producto;
-import com.ecommerce.ecommerce.Entities.enums.Sexo; // Asegúrate de importar Sexo si lo usas en ProductFilters
+import com.ecommerce.ecommerce.Entities.enums.Sexo;
 import com.ecommerce.ecommerce.Services.ProductoService;
-// Importar la clase ProductFilters
 import com.ecommerce.ecommerce.dto.ProductFilters;
-// Importar ProductoDTO
 import com.ecommerce.ecommerce.dto.ProductoDTO;
+import com.ecommerce.ecommerce.dto.ProductoRequestDTO;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/productos") // Ruta base para los endpoints de productos
-public class ProductoController extends BaseController<Producto, Long> {
+@RequestMapping("/productos")
+@CrossOrigin(origins = "*") // Permite solicitudes desde cualquier origen (ajustar en producción si es necesario)
+public class ProductoController {
 
     private final ProductoService productoService;
 
     @Autowired
     public ProductoController(ProductoService productoService) {
-        super(productoService);
         this.productoService = productoService;
     }
 
-    // --- Endpoints que devuelven DTOs ---
 
-    // Obtener productos con promoción en formato DTO (precio final incluido)
-    @GetMapping("/dto/promociones")
-    public ResponseEntity<List<ProductoDTO>> obtenerProductosDTOConDescuento() { // Eliminado throws Exception aquí para manejo interno
+    @GetMapping("/promociones") // Obtiene todos los productos activos con descuento/promoción
+    public ResponseEntity<List<ProductoDTO>> obtenerProductosDTOConDescuento() {
         try {
             List<ProductoDTO> productosDTO = productoService.obtenerProductosPromocionalesDTO();
-            return ResponseEntity.ok(productosDTO);
+            return ResponseEntity.ok(productosDTO); // 200 OK
         } catch (Exception e) {
+            // Loguear el error para depuración
             System.err.println("Error en el controlador al obtener productos promocionales DTO: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // Devuelve un error 500
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // 500 Internal Server Error
         }
     }
 
-    // Obtener todos los productos en formato DTO (con o sin promoción)
-    @GetMapping("/dto")
-    public ResponseEntity<List<ProductoDTO>> obtenerTodosLosProductosDTO() { // Eliminado throws Exception aquí
+    @GetMapping("") // Obtiene todos los productos activos
+    public ResponseEntity<List<ProductoDTO>> obtenerTodosLosProductosDTO() {
         try {
             List<ProductoDTO> productosDTO = productoService.obtenerTodosLosProductosDTO();
-            return ResponseEntity.ok(productosDTO);
+            return ResponseEntity.ok(productosDTO); // 200 OK
         } catch (Exception e) {
             System.err.println("Error en el controlador al obtener todos los productos DTO: " + e.getMessage());
             e.printStackTrace();
@@ -54,26 +52,37 @@ public class ProductoController extends BaseController<Producto, Long> {
         }
     }
 
-    @GetMapping("/dto/{id}")
-    public ResponseEntity<ProductoDTO> obtenerProductoDTOPorId(@PathVariable Long id) { // Eliminado throws Exception aquí
+    @GetMapping("/{id}") // Obtiene un producto activo por ID
+    public ResponseEntity<ProductoDTO> obtenerProductoDTOPorId(@PathVariable Long id) {
         try {
             ProductoDTO productoDTO = productoService.obtenerProductoDTOPorId(id);
-            // Manejar caso not found si el servicio lanza una excepción específica o devuelve null
-            if (productoDTO == null) {
-                return ResponseEntity.notFound().build(); // Devuelve 404 si el producto no se encuentra
-            }
-            return ResponseEntity.ok(productoDTO);
+            // El servicio ya lanza EntityNotFoundException si no lo encuentra o está inactivo
+            return ResponseEntity.ok(productoDTO); // 200 OK
+        } catch (EntityNotFoundException e) {
+            // Captura específica para productos no encontrados o inactivos
+            System.err.println("Producto no encontrado o inactivo (ID: " + id + "): " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // 404 Not Found
         } catch (Exception e) {
-            System.err.println("Error en el controlador al obtener Producto DTO por ID: " + e.getMessage());
+            System.err.println("Error en el controlador al obtener Producto DTO por ID (ID: " + id + "): " + e.getMessage());
             e.printStackTrace();
-            // Puedes refinar esto para devolver 404 si la excepción indica "no encontrado"
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
-    // --- Endpoints para obtener listas de filtros disponibles (como Strings) ---
+    @GetMapping("/buscar") // Busca productos por denominación (palabra clave)
+    public ResponseEntity<List<ProductoDTO>> buscarProductosPorNombre(@RequestParam String keyword) {
+        try {
+            List<ProductoDTO> productosDTO = productoService.buscarProductosPorDenominacion(keyword);
+            return ResponseEntity.ok(productosDTO); // 200 OK
+        } catch (Exception e) {
+            System.err.println("Error en el controlador al buscar productos por nombre: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
-    @GetMapping("/categorias")
+
+    @GetMapping("/categorias") // Obtiene una lista de todas las categorías disponibles
     public ResponseEntity<List<String>> getAllAvailableCategories() {
         try {
             List<String> categorias = productoService.getAllAvailableCategories();
@@ -85,7 +94,7 @@ public class ProductoController extends BaseController<Producto, Long> {
         }
     }
 
-    @GetMapping("/colores")
+    @GetMapping("/colores") // Obtiene una lista de todos los colores disponibles
     public ResponseEntity<List<String>> getAllAvailableColors() {
         try {
             List<String> colores = productoService.getAllAvailableColors();
@@ -97,7 +106,7 @@ public class ProductoController extends BaseController<Producto, Long> {
         }
     }
 
-    @GetMapping("/talles")
+    @GetMapping("/talles") // Obtiene una lista de todos los talles disponibles
     public ResponseEntity<List<String>> getAllAvailableTalles() {
         try {
             List<String> talles = productoService.getAllAvailableTalles();
@@ -109,17 +118,14 @@ public class ProductoController extends BaseController<Producto, Long> {
         }
     }
 
-    // --- Endpoint actualizado para filtrar y ordenar productos ---
-    // Recibe los parámetros de filtro y ordenamiento en el body de la solicitud POST.
-    @PostMapping("/filtrar")
+    @PostMapping("/filtrar") // Permite filtrar y ordenar productos usando un objeto ProductFilters en el cuerpo de la solicitud
     public ResponseEntity<List<ProductoDTO>> filtrarYOrdenarProductos(
-            @RequestBody(required = false) ProductFilters filters // Recibe el objeto de filtro completo en el body
+            @RequestBody(required = false) ProductFilters filters // 'required = false' permite que los filtros sean opcionales
     ) {
         try {
-            // Asegurarse de que el objeto filters no sea null si required = false
+            // Si el cuerpo de la solicitud es nulo, inicializa un ProductFilters vacío para evitar NullPointerExceptions
             ProductFilters actualFilters = filters != null ? filters : new ProductFilters();
 
-            // Llama al método de filtrar y ordenar en el servicio, pasando los campos del objeto filters
             List<ProductoDTO> productosFiltrados = productoService.filtrarYOrdenarProductos(
                     actualFilters.getDenominacion(),
                     actualFilters.getCategorias(),
@@ -135,50 +141,70 @@ public class ProductoController extends BaseController<Producto, Long> {
             );
             return ResponseEntity.ok(productosFiltrados);
         } catch (Exception e) {
-            // Manejo de errores
             System.err.println("Error en el controlador al filtrar productos: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
-    // --- Otros endpoints (CRUD) si los tienes definidos en BaseController y los necesitas ---
-    // Si tus métodos de BaseController ya trabajan con la Entidad Producto, puedes heredarlos directamente.
-    // Si necesitas que trabajen con DTOs de entrada/salida, deberás sobreescribirlos aquí
-    // y añadir la lógica de mapeo DTO <-> Entidad.
 
-    /*
-    // Ejemplo de cómo sobreescribir un método si necesitas trabajar con DTOs de entrada
-    @Override // Si estás sobreescribiendo un método de BaseController
-    @PostMapping // O el método HTTP correcto (PUT, DELETE, etc.)
-    public ResponseEntity<ProductoDTO> create(@RequestBody ProductoDTO productoDTO) {
+    @PostMapping("") // Crea un nuevo producto (sin carga de imágenes en esta request)
+    public ResponseEntity<ProductoDTO> crearProducto(@RequestBody ProductoRequestDTO requestDTO) {
         try {
-            // Necesitas un método para mapear de ProductoDTO a Producto (Entidad)
-            Producto entidadACrear = mapearDTOaEntidad(productoDTO); // Implementa este método
-
-            // Llama al método de creación del servicio (que trabaja con la Entidad)
-            Producto entidadCreada = productoService.create(entidadACrear); // Asumiendo un método create en el servicio/baseService
-
-            // Mapea la entidad creada de vuelta a DTO para la respuesta
-            ProductoDTO dtoCreado = mapearProductoADTO(entidadCreada); // Reutiliza el mapeo Entidad -> DTO
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(dtoCreado);
-
+            // El segundo parámetro 'null' indica que no hay MultipartFile para imágenes en esta solicitud.
+            // Si necesitas cargar imágenes junto con la data del producto, se requeriría un enfoque @RequestPart.
+            ProductoDTO nuevoProducto = productoService.crearProducto(requestDTO, null);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoProducto); // 201 Created
         } catch (Exception e) {
-            System.err.println("Error en el controlador al crear producto (desde DTO): " + e.getMessage());
+            System.err.println("Error en el controlador al crear producto: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // 400 Bad Request (ej. datos inválidos)
+        }
+    }
+
+    @PutMapping("/{id}") // Actualiza un producto existente
+    public ResponseEntity<ProductoDTO> actualizarProducto(@PathVariable Long id, @RequestBody ProductoRequestDTO requestDTO) {
+        try {
+            // Similar a crearProducto, se pasa 'null' para las imágenes si no se manejan en esta request.
+            ProductoDTO productoActualizado = productoService.actualizarProducto(id, requestDTO, null);
+            return ResponseEntity.ok(productoActualizado); // 200 OK
+        } catch (EntityNotFoundException e) {
+            System.err.println("Producto no encontrado para actualizar (ID: " + id + "): " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            System.err.println("Error en el controlador al actualizar producto (ID: " + id + "): " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+    }
+
+    @DeleteMapping("/{id}") // Desactiva (soft delete) un producto
+    public ResponseEntity<?> desactivarProducto(@PathVariable Long id) {
+        try {
+            productoService.eliminarProductoPorId(id); // Usa el método específico del servicio para soft delete
+            return ResponseEntity.noContent().build(); // 204 No Content (indica que la operación fue exitosa sin contenido de retorno)
+        } catch (EntityNotFoundException e) {
+            System.err.println("Producto no encontrado para desactivar (ID: " + id + "): " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // 404 Not Found
+        } catch (Exception e) {
+            System.err.println("Error al desactivar producto desde el controlador (ID: " + id + "): " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); // 500 Internal Server Error
+        }
+    }
+
+    @PutMapping("/activar/{id}") // Activa un producto (cambia 'activo' a true)
+    public ResponseEntity<ProductoDTO> activarProducto(@PathVariable Long id) {
+        try {
+            ProductoDTO activatedProduct = productoService.activarProducto(id);
+            return ResponseEntity.ok(activatedProduct); // 200 OK
+        } catch (EntityNotFoundException e) {
+            System.err.println("Producto no encontrado para activar (ID: " + id + "): " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception e) {
+            System.err.println("Error al activar producto desde el controlador (ID: " + id + "): " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
-    // Método para mapear de ProductoDTO a Producto (Entidad) - NECESITA IMPLEMENTACIÓN REAL
-    private Producto mapearDTOaEntidad(ProductoDTO productoDTO) {
-        // Implementa la lógica de mapeo de DTO a Entidad aquí.
-        // Esto implica crear una nueva instancia de Producto,
-        // copiar los datos del DTO a la Entidad,
-        // y manejar las relaciones (buscar Categorias, Imagenes, ProductoDetalles existentes o crear nuevos).
-        // Esto puede ser complejo dependiendo de tu modelo de datos y lógica de negocio.
-        return null; // Implementar el mapeo real
-    }
-    */
 }
