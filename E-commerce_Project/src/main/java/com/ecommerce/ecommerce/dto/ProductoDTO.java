@@ -6,21 +6,26 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal; // Importar BigDecimal
+
 import java.util.List;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class ProductoDTO {
     private Long id;
     private String denominacion;
-    private Double precioOriginal; // Precio de venta de la entidad Producto
-    private Double precioFinal;    // Precio calculado con descuentos
+    private BigDecimal precioOriginal; // Asegúrate de que sea BigDecimal
+    private BigDecimal precioFinal;    // Asegúrate de que sea BigDecimal
     private boolean tienePromocion;
-    private Sexo sexo; // Tipo Enum o String según tu necesidad en el DTO
-    private List<CategoriaDTO> categorias; // Lista de DTOs de categoría
-    private List<ImagenDTO> imagenes;     // Lista de DTOs de imagen
-    private List<ProductoDetalleDTO> productos_detalles; // Lista de DTOs de detalle de producto
+    private Sexo sexo;
     private boolean activo;
+
+    private List<CategoriaDTO> categorias;
+    private List<ImagenDTO> imagenes;
+    private List<ProductoDetalleDTO> productos_detalles;
+
+    private DescuentoDTO descuento; // <--- ¡Asegúrate de que este campo exista!
 }

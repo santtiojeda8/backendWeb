@@ -1,21 +1,24 @@
 package com.ecommerce.ecommerce.Entities;
 
-import com.ecommerce.ecommerce.Entities.enums.Sexo;
-import com.ecommerce.ecommerce.Entities.enums.Color; // Importar Color si es un Enum
-import com.ecommerce.ecommerce.Entities.enums.Talle; // Importar Talle si es un Enum
 
-import jakarta.persistence.criteria.*; // Importar las clases de Criteria API
+import com.ecommerce.ecommerce.Entities.enums.Sexo;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.List;
+import java.math.BigDecimal; // Importante para BigDecimal
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 // Clase de utilidad para crear especificaciones de filtrado para la entidad Producto
-// Ahora incluyendo filtros basados en ProductoDetalle con listas de valores
 public class ProductoSpecification {
 
-    // Método para filtrar por el campo 'activo' - ¡ESTE ES EL QUE FALTABA!
+    // Método para filtrar por el campo 'activo'
     public static Specification<Producto> byActivo(boolean activo) {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("activo"), activo);
     }
@@ -66,17 +69,16 @@ public class ProductoSpecification {
     // Especificación para filtrar por si tiene promoción
     public static Specification<Producto> byTienePromocion(boolean tienePromocion) {
         return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("tienePromocion"), tienePromocion); // Asumiendo propiedad booleana 'tienePromocion'
+                criteriaBuilder.equal(root.get("tienePromocion"), tienePromocion);
     }
 
     // Especificación para filtrar por rango de precio de VENTA
-    // Filtra por 'precioVenta' en lugar del calculado 'precioFinal'
-    public static Specification<Producto> byPrecioVentaBetween(Double precioMin, Double precioMax) {
+    public static Specification<Producto> byPrecioVentaBetween(BigDecimal precioMin, BigDecimal precioMax) { // Tipo de dato corregido a BigDecimal
         return (root, query, criteriaBuilder) -> {
-            Predicate predicate = criteriaBuilder.conjunction(); // Predicado inicial que siempre es verdadero
+            Predicate predicate = criteriaBuilder.conjunction();
 
             // Usamos el campo existente 'precioVenta' de la entidad Producto
-            Path<Double> precioVentaPath = root.get("precioVenta");
+            Path<BigDecimal> precioVentaPath = root.get("precioVenta"); // Tipo de dato corregido a BigDecimal
 
             if (precioMin != null) {
                 predicate = criteriaBuilder.and(predicate, criteriaBuilder.greaterThanOrEqualTo(precioVentaPath, precioMin));
@@ -88,8 +90,6 @@ public class ProductoSpecification {
             return predicate;
         };
     }
-
-    // --- Nuevas especificaciones basadas en ProductoDetalle, manejando LISTAS de Strings ---
 
     // Especificación para filtrar por AL MENOS UN detalle con color en la lista proporcionada
     public static Specification<Producto> hasDetalleWithAnyColor(List<String> colores) {
@@ -108,19 +108,16 @@ public class ProductoSpecification {
             Predicate productoMatch = criteriaBuilder.equal(subRoot.get("producto"), root);
 
             // 2. El color del detalle debe estar en la lista de colores proporcionada (insensible a mayúsculas/minúsculas).
-            Expression<String> detalleColorExpression = subRoot.get("color").as(String.class); // Tratar como String para comparación
+            Join<ProductoDetalle, Color> colorJoin = subRoot.join("color");
 
-            // Convertir la lista de colores del frontend a minúsculas para la comparación
             List<String> lowerCaseColores = colores.stream()
                     .map(String::toLowerCase)
                     .collect(Collectors.toList());
 
-            // Usamos criteriaBuilder.lower() en la expresión del detalle y luego .in() con la lista de minúsculas
-            Predicate colorMatch = criteriaBuilder.lower(detalleColorExpression).in(lowerCaseColores);
+            Predicate colorMatch = criteriaBuilder.lower(colorJoin.get("nombreColor")).in(lowerCaseColores);
 
             subquery.where(criteriaBuilder.and(productoMatch, colorMatch));
 
-            // Devolvemos la predicado principal: existe AL MENOS UN detalle que cumple las condiciones del subquery
             return criteriaBuilder.exists(subquery);
         };
     }
@@ -140,15 +137,13 @@ public class ProductoSpecification {
 
             Predicate productoMatch = criteriaBuilder.equal(subRoot.get("producto"), root);
 
-            // 2. El talle del detalle debe estar en la lista de talles proporcionada (insensible a mayúsculas/minúsculas).
-            Expression<String> detalleTalleExpression = subRoot.get("talle").as(String.class); // Tratar como String para comparación
+            Join<ProductoDetalle, Talle> talleJoin = subRoot.join("talle");
 
-            // Convertir la lista de talles del frontend a minúsculas
             List<String> lowerCaseTalles = talles.stream()
                     .map(String::toLowerCase)
                     .collect(Collectors.toList());
 
-            Predicate talleMatch = criteriaBuilder.lower(detalleTalleExpression).in(lowerCaseTalles); // Usar lower().in()
+            Predicate talleMatch = criteriaBuilder.lower(talleJoin.get("nombreTalle")).in(lowerCaseTalles);
 
             subquery.where(criteriaBuilder.and(productoMatch, talleMatch));
 
@@ -157,7 +152,6 @@ public class ProductoSpecification {
     }
 
     // Especificación para filtrar por stock actual mínimo en ProductoDetalle
-    // Asumiendo que quieres productos que tienen AL MENOS UN detalle con stock >= stockMinimo
     public static Specification<Producto> hasDetalleWithStockActualGreaterThan(Integer stockMinimo) {
         return (root, query, criteriaBuilder) -> {
             if (stockMinimo == null) {
@@ -179,15 +173,14 @@ public class ProductoSpecification {
         };
     }
 
-
     // Método para combinar múltiples especificaciones con AND
     public static Specification<Producto> withFilters(
             String denominacion,
             List<String> categorias,
             Sexo sexo,
             Boolean tienePromocion,
-            Double precioMin,
-            Double precioMax,
+            BigDecimal precioMin, // Tipo de dato corregido a BigDecimal
+            BigDecimal precioMax, // Tipo de dato corregido a BigDecimal
             List<String> colores,
             List<String> talles,
             Integer stockMinimo

@@ -78,7 +78,9 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/**").permitAll()
 
                         // 5. Rutas de Productos (Públicas)
-                        .requestMatchers(GET,"/productos").permitAll()
+                        .requestMatchers(GET,"/productos/**").permitAll()
+                        .requestMatchers(GET,"/colores/**").permitAll()
+                        .requestMatchers(GET,"/talles/**").permitAll()
                         .requestMatchers(GET,"/productos/categorias").permitAll()
                         .requestMatchers(GET,"/productos/colores").permitAll()
                         .requestMatchers(GET,"/productos/talles").permitAll()

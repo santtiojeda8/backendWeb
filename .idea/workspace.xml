@@ -4,28 +4,46 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8a0af119-c1d2-48ff-a2d4-3e57944b3cc8" name="Changes" comment="&quot;Inico de implementacion de mercado pago&quot;">
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/CloudinaryService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/CartItemDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/CreateOrdenCompraDetalleDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/MercadoPagoCheckoutRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/MercadoPagoItemRequestDTO.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/MercadoPagoPreferenceResponseDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Gradle__com_mercadopago_sdk_java_2_4_0.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Gradle__com_mercadopago_sdk_java_2_4_0.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules/ecommerce.main.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules/ecommerce.main.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules/ecommerce.test.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules/ecommerce.test.iml" afterDir="false" />
+    <list default="true" id="8a0af119-c1d2-48ff-a2d4-3e57944b3cc8" name="Changes" comment="&quot;Avances mercado Pago funcional y pagina de admin productos a mitad&quot;">
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ColorController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/TalleController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Color.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Talle.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ColorRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/TalleRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ColorService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/TalleService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ColorDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/TalleDTO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ImagenController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ImagenController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/OrdenCompraController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/OrdenCompraController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/enums/EstadoOrdenCompra.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/enums/EstadoOrdenCompra.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/BaseController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/BaseController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/DescuentoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/DescuentoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoDetalleController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoDetalleController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Categoria.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Categoria.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Descuento.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Descuento.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Imagen.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Imagen.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Producto.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Producto.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoDetalle.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoDetalle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoSpecification.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoSpecification.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/enums/Color.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/enums/Talle.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoDetalleRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoDetalleRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/AuthService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/DescuentosService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/DescuentosService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraDetalleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraDetalleService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoDetalleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoDetalleService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/MercadoPagoPreferenceRequestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/MercadoPagoPreferenceRequestDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/mercadopago/MercadoPagoConfiguration.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/mercadopago/MercadoPagoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/mercadopago/MercadoPagoController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/mercadopago/MercadoPagoService.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/UsuarioService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/UsuarioService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/DescuentoDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/DescuentoDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ImagenDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ImagenDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductFilters.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductFilters.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDetalleDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDetalleDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDetalleRequestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoDetalleRequestDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoRequestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/ProductoRequestDTO.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,6 +70,7 @@
       <list>
         <option value="Enum" />
         <option value="Exception" />
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -100,27 +119,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.EcommerceApplication.executor": "Run",
-    "Application.Unnamed.executor": "Run",
-    "Gradle.Build E-commerce_Project.executor": "Run",
-    "Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle.executor": "Run",
-    "Gradle.Download Sources.executor": "Run",
-    "Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor": "Run",
-    "Gradle.E-commerce_Project.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "#2 on RamaSeba",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "E:/Programacion Tareas/Prog/Metolodogia/Gonzales/bACK2/backendWeb",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.0"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.EcommerceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Unnamed.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Build E-commerce_Project.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Download Sources.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.E-commerce_Project.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;#2 on RamaSeba&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/Programacion Tareas/Prog/Metolodogia/Gonzales/bACK2/backendWeb&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Application.Unnamed">
     <configuration name="Unnamed" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="20" />
@@ -217,7 +235,15 @@
       <option name="project" value="LOCAL" />
       <updated>1748475301848</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="&quot;Avances mercado Pago funcional y pagina de admin productos a mitad&quot;">
+      <option name="closed" value="true" />
+      <created>1749086159567</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1749086159567</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -235,7 +261,8 @@
     <MESSAGE value="&quot;UserProfile casi terminado faltan algunos toques&quot;" />
     <MESSAGE value="&quot;compraProcuto logica de la url&quot;" />
     <MESSAGE value="&quot;Inico de implementacion de mercado pago&quot;" />
-    <option name="LAST_COMMIT_MESSAGE" value="&quot;Inico de implementacion de mercado pago&quot;" />
+    <MESSAGE value="&quot;Avances mercado Pago funcional y pagina de admin productos a mitad&quot;" />
+    <option name="LAST_COMMIT_MESSAGE" value="&quot;Avances mercado Pago funcional y pagina de admin productos a mitad&quot;" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -244,36 +271,14 @@
           <properties class="java.lang.IllegalStateException" package="java.lang" />
           <option name="timeStamp" value="1" />
         </breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>60</line>
-          <option name="timeStamp" value="3" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>66</line>
-          <option name="timeStamp" value="4" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>54</line>
-          <option name="timeStamp" value="6" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>70</line>
-          <option name="timeStamp" value="7" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>64</line>
-          <option name="timeStamp" value="9" />
-        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
     <watches-manager>
       <configuration name="GradleRunConfiguration">
         <watch expression="jwtService" language="JAVA" />
+        <watch expression="productoDTO" />
+        <watch expression="productoDTO" />
+        <watch expression="productoDTO" language="JAVA" />
       </configuration>
     </watches-manager>
   </component>

@@ -1,8 +1,6 @@
 package com.ecommerce.ecommerce.Entities;
 
-import com.ecommerce.ecommerce.Entities.enums.Color;
-import com.ecommerce.ecommerce.Entities.enums.Talle;
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonBackReference; // <-- Importa esta anotación
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -27,16 +25,18 @@ public class ProductoDetalle extends Base {
     @Column(name = "stock_maximo")
     private Integer stockMaximo;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "color")
-    private Color color;
+    // --- CAMBIO AQUÍ: Ahora Color es una entidad ManyToOne ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "color_id", nullable = false) // Columna de la clave foránea
+    private Color color; // Referencia a la entidad Color
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "talle")
-    private Talle talle;
+    // --- CAMBIO AQUÍ: Ahora Talle es una entidad ManyToOne ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "talle_id", nullable = false) // Columna de la clave foránea
+    private Talle talle; // Referencia a la entidad Talle
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id")
-    @JsonBackReference("producto-detalles") // <--- ¡CAMBIO AQUÍ! Debe coincidir con el nombre en Producto
+    @JsonBackReference("producto-detalles") // <-- ¡AGREGA ESTO! El nombre debe coincidir con el de Producto
     private Producto producto;
 }

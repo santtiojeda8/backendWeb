@@ -206,7 +206,7 @@ public class AuthService {
         }
         return ImagenDTO.builder()
                 .id(imagen.getId())
-                .url(imagen.getDenominacion())
+                .url(imagen.getUrl())
                 .build();
     }
 }

@@ -1,14 +1,13 @@
 package com.ecommerce.ecommerce.Entities;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference; // <-- Importar JsonManagedReference
+
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.time.LocalTime;;
+import java.math.BigDecimal; // Recomendado para precioPromocional si es un factor (0.00-1.00)
 
 @Entity
 @Table(name="descuentos")
@@ -30,14 +29,8 @@ public class Descuento extends Base{
     private LocalTime horaHasta;
     @Column(name="descripcion_descuento")
     private String descripcionDescuento;
-    @Column(name="precio_promocional")
-    private Double precioPromocional;
 
-    // Relación Descuento <-> Producto (lado dueño)
-    @ManyToMany
-    @JoinTable(name = "producto_descuentosid", joinColumns = @JoinColumn(name = "descuentoId"), inverseJoinColumns = @JoinColumn(name="productoId"))
-    @Builder.Default
-    // CAMBIO CRÍTICO: Usar @JsonManagedReference con un nombre para emparejar
-    @JsonManagedReference("descuento-productos") // <--- ¡CAMBIO AQUÍ!
-    private Set<Producto> productos = new HashSet<>();
+    @Column(name="precio_promocional", columnDefinition = "DECIMAL(5,2)") // Ejemplo: 0.00 a 99.99
+    private BigDecimal precioPromocional; // CAMBIO A BIGDECIMAL
+
 }

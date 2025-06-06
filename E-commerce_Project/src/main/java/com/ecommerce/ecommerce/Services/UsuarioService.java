@@ -304,7 +304,7 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         }
         return ImagenDTO.builder()
                 .id(imagen.getId())
-                .url(imagen.getDenominacion())
+                .url(imagen.getUrl())
                 .build();
     }
 
@@ -352,7 +352,7 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         if (imagenUser == null) {
             imagenUser = new Imagen();
         }
-        imagenUser.setDenominacion(imageUrl);
+        imagenUser.setUrl(imageUrl);
         usuario.setImagenUser(imagenUser);
         Usuario savedUsuario = usuarioRepository.save(usuario);
 

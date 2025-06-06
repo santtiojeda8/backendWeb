@@ -6,33 +6,25 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal; // Import BigDecimal for precioOriginal
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class ProductoRequestDTO {
-    private Long id; // Null para creación, presente para actualización
     private String denominacion;
-    private Double precioOriginal; // Precio de venta del producto (para el backend)
-    private boolean tienePromocion; // <--- CORREGIDO: ahora es un boolean
+    private BigDecimal precioOriginal; // CHANGED: From Double to BigDecimal
+    private boolean tienePromocion;
     private Sexo sexo;
     private boolean activo;
 
-    // --- Relaciones: Enviamos solo los IDs o datos mínimos para las colecciones ---
-
-    // Para Categorías (ManyToMany): Enviamos una lista de IDs de categoría.
-    private List<Long> categoriaIds;
-
-    // Para Imágenes (OneToMany): Enviamos una lista de DTOs simplificados.
-    // Esto asume que las imágenes se enviarán con URL o denominación,
-    // y que el backend las manejará (creará si no tienen ID, actualizará si tienen).
-    private List<ImagenRequestDTO> imagenes;
-
-    // Para Detalles de Producto (OneToMany): Enviamos una lista de DTOs de solicitud para detalles.
+    private Set<Long> categoriaIds;
+    private List<ImagenDTO> imagenes;
     private List<ProductoDetalleRequestDTO> productos_detalles;
 
-    // Puedes añadir campos para descuentos si los gestionas al crear/actualizar productos
-    // private List<Long> descuentoIds; // O un DTO para descuentos si la lógica es más compleja
+    // CHANGED: Now expects a nested DescuentoDTO
+    private DescuentoDTO descuento;
 }

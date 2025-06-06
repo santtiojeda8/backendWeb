@@ -58,8 +58,8 @@ public class OrdenCompraDetalleService extends BaseService<OrdenCompraDetalle, L
             nestedDTO.setStockActual(pd.getStockActual());
             nestedDTO.setStockMaximo(pd.getStockMaximo());
 
-            nestedDTO.setColor(pd.getColor() != null ? pd.getColor().name() : null);
-            nestedDTO.setTalle(pd.getTalle() != null ? pd.getTalle().name() : null);
+            nestedDTO.setColor(pd.getColor() != null ? pd.getColor().getNombreColor() : null);
+            nestedDTO.setTalle(pd.getTalle() != null ? pd.getTalle().getNombreTalle() : null);
 
             if (pd.getProducto() != null) {
                 nestedDTO.setProductoDenominacion(pd.getProducto().getDenominacion());

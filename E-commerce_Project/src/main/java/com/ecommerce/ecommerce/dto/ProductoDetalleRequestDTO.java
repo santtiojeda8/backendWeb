@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.dto;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,8 +16,8 @@ public class ProductoDetalleRequestDTO {
     private BigDecimal precioCompra;
     private Integer stockActual;
     private Integer stockMaximo;
-    private String color; // Mantener como String para facilitar el envío desde el frontend
-    private String talle; // Mantener como String para facilitar el envío desde el frontend
+    private Long colorId;
+    private Long talleId;
     private boolean activo;
-
+    private Long productoId; // <--- ¡Este es el campo que necesitas añadir!
 }
