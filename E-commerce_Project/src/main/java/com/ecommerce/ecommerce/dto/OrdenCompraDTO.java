@@ -22,6 +22,7 @@ public class OrdenCompraDTO {
     private String direccionEnvio; // This might become less relevant if Direccion entity is fully used
     private List<OrdenCompraDetalleDTO> detalles;
     private Long usuarioId;
+    private UserInfoDTO usuarioInfoDTO;
     private String estadoOrden; // Represents EstadoOrdenCompra enum as String
     private String mercadopagoPreferenceId;
     private String mercadopagoPaymentId;

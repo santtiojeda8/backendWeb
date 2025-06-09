@@ -1,4 +1,3 @@
-// com.ecommerce.ecommerce.Entities.OrdenCompra.java
 package com.ecommerce.ecommerce.Entities;
 
 import com.ecommerce.ecommerce.Entities.enums.EstadoOrdenCompra;
@@ -7,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.math.BigDecimal; // <-- Asegúrate de tener esta importación
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -22,7 +21,7 @@ import java.util.Set;
 public class OrdenCompra extends Base {
 
     @Column(name = "total", precision = 10, scale = 2)
-    private BigDecimal total; // <-- ¡Asegúrate de que sea BigDecimal!
+    private BigDecimal total;
 
     @Column(name = "fecha_compra")
     private LocalDateTime fechaCompra;
@@ -50,9 +49,9 @@ public class OrdenCompra extends Base {
     private String tipoEnvio;
 
     @Column(name = "costo_envio", precision = 10, scale = 2)
-    private BigDecimal costoEnvio; // <-- ¡Asegúrate de que sea BigDecimal!
+    private BigDecimal costoEnvio;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER) // <--- ¡CAMBIA ESTO A EAGER!
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
 
@@ -69,7 +68,6 @@ public class OrdenCompra extends Base {
         if (detalle != null) {
             detalles.add(detalle);
             detalle.setOrdenCompra(this);
-            // recalcularTotal(); // Ya manejado por @PrePersist/@PreUpdate
         }
     }
 
@@ -77,22 +75,18 @@ public class OrdenCompra extends Base {
         if (detalle != null) {
             detalles.remove(detalle);
             detalle.setOrdenCompra(null);
-            // recalcularTotal(); // Ya manejado por @PrePersist/@PreUpdate
         }
     }
 
-    // --- CORRECCIÓN CLAVE AQUÍ ---
     public void recalcularTotal() {
-        this.total = BigDecimal.ZERO; // Siempre inicializar con BigDecimal.ZERO
+        this.total = BigDecimal.ZERO;
         if (this.detalles != null) {
             for (OrdenCompraDetalle detalle : detalles) {
-                // Ahora detalle.getSubtotal() debe devolver BigDecimal
                 if (detalle.getSubtotal() != null) {
                     this.total = this.total.add(detalle.getSubtotal());
                 }
             }
         }
-        // Ahora this.costoEnvio debe ser BigDecimal
         if (this.costoEnvio != null) {
             this.total = this.total.add(this.costoEnvio);
         }

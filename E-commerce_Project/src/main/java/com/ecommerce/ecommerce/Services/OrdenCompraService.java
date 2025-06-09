@@ -20,7 +20,7 @@ import com.ecommerce.ecommerce.dto.LocalidadDTO;
 import com.ecommerce.ecommerce.dto.OrdenCompraDTO;
 import com.ecommerce.ecommerce.dto.OrdenCompraDetalleDTO;
 import com.ecommerce.ecommerce.dto.ProvinciaDTO;
-import com.ecommerce.ecommerce.dto.UserDTO;
+import com.ecommerce.ecommerce.dto.UserInfoDTO;
 
 import com.ecommerce.ecommerce.exception.ResourceNotFoundException;
 
@@ -42,10 +42,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
 
     private static final Logger logger = LoggerFactory.getLogger(OrdenCompraService.class);
 
-    // ELIMINADAS CONSTANTES RELACIONADAS CON REINTENTOS DE MP
-    // private static final int MAX_RETRIES = 5;
-    // private static final long RETRY_DELAY_MS = 5000;
-
     private final OrdenCompraRepository ordenCompraRepository;
     private final OrdenCompraDetalleRepository ordenCompraDetalleRepository;
     private final UsuarioRepository usuarioRepository;
@@ -54,7 +50,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
     private final LocalidadRepository localidadRepository;
     private final ProvinciaRepository provinciaRepository;
     private final OrdenCompraDetalleService ordenCompraDetalleService;
-    // ELIMINADO: private final PaymentClient paymentClient;
 
     @Autowired
     public OrdenCompraService(OrdenCompraRepository ordenCompraRepository,
@@ -65,7 +60,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                               LocalidadRepository localidadRepository,
                               ProvinciaRepository provinciaRepository,
                               OrdenCompraDetalleService ordenCompraDetalleService
-                              // ELIMINADO paymentClient del constructor
     ) {
         super(ordenCompraRepository);
         this.ordenCompraRepository = ordenCompraRepository;
@@ -76,7 +70,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
         this.localidadRepository = localidadRepository;
         this.provinciaRepository = provinciaRepository;
         this.ordenCompraDetalleService = ordenCompraDetalleService;
-        // ELIMINADO: this.paymentClient = paymentClient;
     }
 
     // --- Métodos de Mapeo de Entidad a DTO ---
@@ -92,12 +85,21 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                     .collect(Collectors.toList());
         }
 
-        UserDTO usuarioDTO = null;
+        UserInfoDTO usuarioInfoDTO = null;
         Long usuarioIdFromEntity = null;
+
+        // *** CAMBIO CLAVE AQUÍ: Eliminamos la referencia a getUsuarioId() directa ***
+        // Siempre accedemos al ID a través del objeto Usuario.
         if (ordenCompra.getUsuario() != null) {
-            usuarioDTO = mapUsuarioToUserDTO(ordenCompra.getUsuario());
+            usuarioInfoDTO = mapUsuarioToUserInfoDTO(ordenCompra.getUsuario());
             usuarioIdFromEntity = ordenCompra.getUsuario().getId();
+        } else {
+            // Si el objeto Usuario es null (ej. lazy loading y no cargado),
+            // entonces usuarioInfoDTO y usuarioIdFromEntity se mantendrán null.
+            // Esto es correcto si la entidad OrdenCompra no tiene un campo 'usuarioId' directo.
+            logger.warn("La orden de compra ID {} no tiene un objeto Usuario asociado cargado. UserInfoDTO y usuarioId serán null.", ordenCompra.getId());
         }
+
 
         DireccionDTO direccionDTO = null;
         if(ordenCompra.getDireccion() != null){
@@ -108,9 +110,10 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                 .id(ordenCompra.getId())
                 .total(ordenCompra.getTotal())
                 .fechaCompra(ordenCompra.getFechaCompra())
-                .direccionEnvio(ordenCompra.getDireccionEnvio()) // Este campo podría ser redundante si ya se usa direccionAsociada
+                .direccionEnvio(ordenCompra.getDireccionEnvio())
                 .detalles(detalleDTOs)
-                .usuarioId(usuarioIdFromEntity)
+                .usuarioId(usuarioIdFromEntity) // Usar el ID obtenido del usuario
+                .usuarioInfoDTO(usuarioInfoDTO)
                 .estadoOrden(ordenCompra.getEstadoOrden() != null ? ordenCompra.getEstadoOrden().name() : null)
                 .mercadopagoPreferenceId(ordenCompra.getMercadopagoPreferenceId())
                 .mercadopagoPaymentId(ordenCompra.getMercadopagoPaymentId())
@@ -122,21 +125,18 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                 .build();
     }
 
-    // Helper method for mapping Usuario to UserDTO
-    private UserDTO mapUsuarioToUserDTO(Usuario usuario) {
+    private UserInfoDTO mapUsuarioToUserInfoDTO(Usuario usuario) {
         if (usuario == null) {
             return null;
         }
-        return UserDTO.builder()
+        return UserInfoDTO.builder()
                 .id(usuario.getId())
-                .firstname(usuario.getNombre())
-                .lastname(usuario.getApellido())
+                .nombre(usuario.getNombre())
+                .apellido(usuario.getApellido())
                 .email(usuario.getEmail())
-                .username(usuario.getUsername())
                 .build();
     }
 
-    // --- Helper method for mapping Direccion Entity to DireccionDTO ---
     private DireccionDTO mapDireccionToDTO(Direccion entity) {
         if (entity == null) return null;
         LocalidadDTO localidadDTO = null;
@@ -154,7 +154,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                 .build();
     }
 
-    // --- Helper method for mapping Localidad Entity to LocalidadDTO ---
     private LocalidadDTO mapLocalidadToDTO(Localidad entity) {
         if (entity == null) return null;
         ProvinciaDTO provinciaDTO = null;
@@ -168,7 +167,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                 .build();
     }
 
-    // --- Helper method for mapping Provincia Entity to ProvinciaDTO ---
     private ProvinciaDTO mapProvinciaToDTO(Provincia entity) {
         if (entity == null) return null;
         return ProvinciaDTO.builder()
@@ -257,19 +255,22 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
         newOrden.setEstadoOrden(EstadoOrdenCompra.PENDIENTE_PAGO); // Initial state
         newOrden.setActivo(true);
 
-        if (dto.getUsuarioId() != null) {
-            Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + dto.getUsuarioId()));
+        Long userIdToUse = (dto.getUsuarioInfoDTO() != null && dto.getUsuarioInfoDTO().getId() != null)
+                ? dto.getUsuarioInfoDTO().getId()
+                : dto.getUsuarioId();
+
+        if (userIdToUse != null) {
+            Usuario usuario = usuarioRepository.findById(userIdToUse)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userIdToUse));
             newOrden.setUsuario(usuario);
         } else {
             throw new IllegalArgumentException("ID de usuario es obligatorio para crear una orden de compra.");
         }
 
-        // Handle shipping details and address
         newOrden.setTipoEnvio(dto.getShippingOption());
         newOrden.setCostoEnvio(dto.getShippingCost());
         newOrden.setTelefono(dto.getBuyerPhoneNumber());
-        newOrden.setDireccionEnvio(dto.getDireccionEnvio()); // Si este campo no se usa, considerar eliminarlo
+        newOrden.setDireccionEnvio(dto.getDireccionEnvio());
 
         if (dto.getDireccionId() != null) {
             Direccion existingDireccion = direccionRepository.findByIdAndActivoTrue(dto.getDireccionId())
@@ -277,14 +278,12 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
             newOrden.setDireccion(existingDireccion);
         } else if (dto.getNuevaDireccion() != null) {
             Direccion newDireccionEntity = mapDireccionDTOToEntity(dto.getNuevaDireccion());
-            // Asociar el usuario a la nueva dirección antes de guardarla
             if (newOrden.getUsuario() != null) {
                 newDireccionEntity.setUsuario(newOrden.getUsuario());
             }
             newOrden.setDireccion(direccionRepository.save(newDireccionEntity));
         }
 
-        // Calculate total from details and set it
         BigDecimal calculatedTotal = BigDecimal.ZERO;
         if (dto.getDetalles() != null && !dto.getDetalles().isEmpty()) {
             for (OrdenCompraDetalleDTO detalleDTO : dto.getDetalles()) {
@@ -297,14 +296,11 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
 
                 OrdenCompraDetalle detalle = ordenCompraDetalleService.mapDTOToOrdenCompraDetalle(detalleDTO);
                 detalle.setOrdenCompra(newOrden);
-                // Subtotal will be calculated by @PrePersist in OrdenCompraDetalle
 
-                // Add to order details list
                 newOrden.addDetalle(detalle);
 
                 calculatedTotal = calculatedTotal.add(detalle.getPrecioUnitario().multiply(new BigDecimal(detalle.getCantidad())));
 
-                // Decrease stock
                 productoDetalle.setStockActual(productoDetalle.getStockActual() - detalleDTO.getCantidad());
                 productoDetalleRepository.save(productoDetalle);
             }
@@ -312,7 +308,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
             throw new IllegalArgumentException("Una orden de compra debe tener al menos un detalle.");
         }
 
-        // Add shipping cost to total if applicable
         if (newOrden.getCostoEnvio() != null) {
             calculatedTotal = calculatedTotal.add(newOrden.getCostoEnvio());
         }
@@ -328,52 +323,48 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
             throw new ResourceNotFoundException("Orden de compra no encontrada para actualizar con ID: " + id);
         }
 
-        // Update fields from DTO
         entityToUpdate.setTotal(dto.getTotal() != null ? dto.getTotal() : entityToUpdate.getTotal());
         entityToUpdate.setDireccionEnvio(dto.getDireccionEnvio() != null ? dto.getDireccionEnvio() : entityToUpdate.getDireccionEnvio());
         entityToUpdate.setTipoEnvio(dto.getShippingOption() != null ? dto.getShippingOption() : entityToUpdate.getTipoEnvio());
         entityToUpdate.setCostoEnvio(dto.getShippingCost() != null ? dto.getShippingCost() : entityToUpdate.getCostoEnvio());
         entityToUpdate.setTelefono(dto.getBuyerPhoneNumber() != null ? dto.getBuyerPhoneNumber() : entityToUpdate.getTelefono());
 
-        // Update state if provided and different
         if (dto.getEstadoOrden() != null && !entityToUpdate.getEstadoOrden().name().equalsIgnoreCase(dto.getEstadoOrden())) {
             entityToUpdate.setEstadoOrden(EstadoOrdenCompra.valueOf(dto.getEstadoOrden().toUpperCase()));
             entityToUpdate.setFechaActualizacionEstado(LocalDateTime.now());
         }
 
-        // Update user if provided (careful: this changes the owner of the order)
-        if (dto.getUsuarioId() != null && (entityToUpdate.getUsuario() == null || !dto.getUsuarioId().equals(entityToUpdate.getUsuario().getId()))) {
-            Usuario newUsuario = usuarioRepository.findById(dto.getUsuarioId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + dto.getUsuarioId()));
+        Long userIdToUse = (dto.getUsuarioInfoDTO() != null && dto.getUsuarioInfoDTO().getId() != null)
+                ? dto.getUsuarioInfoDTO().getId()
+                : dto.getUsuarioId();
+
+        if (userIdToUse != null && (entityToUpdate.getUsuario() == null || !userIdToUse.equals(entityToUpdate.getUsuario().getId()))) {
+            Usuario newUsuario = usuarioRepository.findById(userIdToUse)
+                    .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userIdToUse));
             entityToUpdate.setUsuario(newUsuario);
         }
 
-        // Update address
         if (dto.getDireccionId() != null && (entityToUpdate.getDireccion() == null || !dto.getDireccionId().equals(entityToUpdate.getDireccion().getId()))) {
             Direccion newDireccion = direccionRepository.findByIdAndActivoTrue(dto.getDireccionId())
                     .orElseThrow(() -> new ResourceNotFoundException("Dirección existente no encontrada o inactiva con ID: " + dto.getDireccionId()));
             entityToUpdate.setDireccion(newDireccion);
         } else if (dto.getNuevaDireccion() != null) {
             Direccion newDireccionEntity = mapDireccionDTOToEntity(dto.getNuevaDireccion());
-            // Asociar el usuario a la nueva dirección antes de guardarla
             if (entityToUpdate.getUsuario() != null) {
                 newDireccionEntity.setUsuario(entityToUpdate.getUsuario());
             }
             entityToUpdate.setDireccion(direccionRepository.save(newDireccionEntity));
         }
 
-        // Update details
         if (dto.getDetalles() != null) {
             Set<Long> incomingDetailIds = dto.getDetalles().stream()
                     .map(OrdenCompraDetalleDTO::getId)
                     .filter(java.util.Objects::nonNull)
                     .collect(Collectors.toSet());
 
-            // Remove details that are no longer present
             entityToUpdate.getDetalles().removeIf(existingDetail ->
                     !incomingDetailIds.contains(existingDetail.getId()));
 
-            // Update or add new details
             for (OrdenCompraDetalleDTO detalleDTO : dto.getDetalles()) {
                 if (detalleDTO.getId() != null) {
                     Optional<OrdenCompraDetalle> existingDetailOpt = entityToUpdate.getDetalles().stream()
@@ -439,7 +430,7 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
     @Transactional
     public OrdenCompra crearOrdenInicial(
             Long userId,
-            String buyerPhoneNumber, // Se eliminó direccionEnvio (String) de aquí
+            String buyerPhoneNumber,
             DireccionDTO nuevaDireccionDTO,
             Long direccionIdExistente,
             String shippingOption,
@@ -447,7 +438,7 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
             BigDecimal montoTotalCalculado,
             List<OrdenCompraDetalleDTO> detallesDTO) throws Exception {
 
-        logger.info("Creando orden inicial para usuario ID: {}", userId); // Log de inicio
+        logger.info("Creando orden inicial para usuario ID: {}", userId);
 
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
@@ -457,20 +448,19 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
             if (direccionIdExistente != null) {
                 direccionAsociada = direccionRepository.findByIdAndActivoTrue(direccionIdExistente)
                         .orElseThrow(() -> new ResourceNotFoundException("Direccion existente no encontrada o inactiva con ID: " + direccionIdExistente));
-                // Asegurar que la dirección existente esté asociada al usuario si no lo está
                 if (!usuario.getDirecciones().contains(direccionAsociada)) {
                     usuario.addDireccion(direccionAsociada);
-                    usuarioRepository.save(usuario); // Guardar el usuario para actualizar la relación
+                    usuarioRepository.save(usuario);
                     logger.info("Asociando dirección existente ID {} a usuario ID {}", direccionIdExistente, userId);
                 }
             } else if (nuevaDireccionDTO != null) {
                 Direccion nuevaDireccionEntity = mapDireccionDTOToEntity(nuevaDireccionDTO);
                 nuevaDireccionEntity.setActivo(true);
-                nuevaDireccionEntity.setUsuario(usuario); // Asociar la nueva dirección al usuario
+                nuevaDireccionEntity.setUsuario(usuario);
                 direccionAsociada = direccionRepository.save(nuevaDireccionEntity);
 
                 usuario.addDireccion(direccionAsociada);
-                usuarioRepository.save(usuario); // Guardar el usuario para actualizar la relación
+                usuarioRepository.save(usuario);
                 logger.info("Creando y asociando nueva dirección a usuario ID {}", userId);
             } else {
                 throw new IllegalArgumentException("Debe proporcionar una dirección existente (direccionId) o una nueva (nuevaDireccion) para envío a domicilio.");
@@ -482,15 +472,13 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
         ordenCompra.setFechaActualizacionEstado(LocalDateTime.now());
         ordenCompra.setEstadoOrden(EstadoOrdenCompra.PENDIENTE_PAGO);
         ordenCompra.setUsuario(usuario);
-        // ordenCompra.setDireccionEnvio(direccionEnvio); // Campo eliminado de la firma y aquí
         ordenCompra.setTelefono(buyerPhoneNumber);
         ordenCompra.setTipoEnvio(shippingOption);
         ordenCompra.setCostoEnvio(shippingCost);
-        ordenCompra.setTotal(montoTotalCalculado); // Usar directamente el total calculado y enviado desde MercadoPagoController
+        ordenCompra.setTotal(montoTotalCalculado);
         ordenCompra.setDireccion(direccionAsociada);
         ordenCompra.setActivo(true);
 
-        // --- Handle Order Details and Stock Management ---
         for (OrdenCompraDetalleDTO detalleDTO : detallesDTO) {
             ProductoDetalle productoDetalle = productoDetalleRepository.findById(detalleDTO.getProductoDetalleId())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto Detalle no encontrado con ID: " + detalleDTO.getProductoDetalleId()));
@@ -504,7 +492,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
 
             ordenCompra.addDetalle(detalle);
 
-            // Disminuir stock
             productoDetalle.setStockActual(productoDetalle.getStockActual() - detalleDTO.getCantidad());
             productoDetalleRepository.save(productoDetalle);
             logger.info("Stock de ProductoDetalle ID {} disminuido en {}. Nuevo stock: {}", productoDetalle.getId(), detalleDTO.getCantidad(), productoDetalle.getStockActual());
@@ -515,17 +502,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
         return savedOrden;
     }
 
-    /**
-     * Actualiza el estado de una orden de compra y el ID de pago de Mercado Pago.
-     * Este método será llamado desde el MercadoPagoController al recibir un webhook.
-     *
-     * @param ordenId    ID de la orden de compra a actualizar.
-     * @param nuevoEstado El nuevo estado de la orden.
-     * @param mpPaymentId El ID de pago de Mercado Pago asociado.
-     * @return La OrdenCompra actualizada.
-     * @throws ResourceNotFoundException Si la orden no se encuentra.
-     * @throws Exception                 En caso de otros errores.
-     */
     @Transactional
     public OrdenCompra actualizarEstadoOrdenYStock(Long ordenId, EstadoOrdenCompra nuevoEstado, String mpPaymentId) throws Exception {
         logger.info("Actualizando estado de orden ID {} a {}. Payment ID: {}", ordenId, nuevoEstado, mpPaymentId);
@@ -536,7 +512,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
 
         EstadoOrdenCompra estadoActual = orden.getEstadoOrden();
 
-        // Si el estado de la orden es diferente al nuevo estado recibido
         if (!estadoActual.equals(nuevoEstado)) {
             orden.setEstadoOrden(nuevoEstado);
             orden.setFechaActualizacionEstado(LocalDateTime.now());
@@ -544,7 +519,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                 orden.setMercadopagoPaymentId(mpPaymentId);
             }
 
-            // Lógica de gestión de stock basada en el cambio de estado
             if (nuevoEstado == EstadoOrdenCompra.PAGADA && estadoActual != EstadoOrdenCompra.PAGADA) {
                 logger.info("Orden {} pasa a PAGADA. Stock ya fue descontado en la creación inicial.", orden.getId());
             } else if (nuevoEstado == EstadoOrdenCompra.RECHAZADA && estadoActual != EstadoOrdenCompra.RECHAZADA) {
@@ -560,7 +534,6 @@ public class OrdenCompraService extends BaseService<OrdenCompra, Long> {
                 }
             }
         }
-        // Guardar la orden solo si hubo un cambio de estado o de paymentId
         OrdenCompra updatedOrden = ordenCompraRepository.save(orden);
         logger.info("Orden de compra ID {} actualizada a estado {}.", updatedOrden.getId(), updatedOrden.getEstadoOrden());
         return updatedOrden;
