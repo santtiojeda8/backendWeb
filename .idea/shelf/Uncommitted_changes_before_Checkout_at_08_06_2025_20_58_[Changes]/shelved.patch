@@ -1,0 +1,78 @@
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"8a0af119-c1d2-48ff-a2d4-3e57944b3cc8\" name=\"Changes\" comment=\"&quot;UserProfile casi terminado faltan algunos toques&quot;\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"ExternalProjectsData\">\r\n    <projectState path=\"$PROJECT_DIR$/E-commerce_Project\">\r\n      <ProjectState />\r\n    </projectState>\r\n  </component>\r\n  <component name=\"ExternalProjectsManager\">\r\n    <system id=\"GRADLE\">\r\n      <state>\r\n        <task path=\"$PROJECT_DIR$/E-commerce_Project/build.gradle\">\r\n          <activation />\r\n        </task>\r\n        <projects_view />\r\n      </state>\r\n    </system>\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Class\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Merge.Settings\">\r\n    <option name=\"BRANCH\" value=\"origin/RamaSeba\" />\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_BRANCH_BY_REPOSITORY\">\r\n      <map>\r\n        <entry key=\"$PROJECT_DIR$\" value=\"main\" />\r\n      </map>\r\n    </option>\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitHubPullRequestSearchHistory\">{\r\n  &quot;lastFilter&quot;: {\r\n    &quot;state&quot;: &quot;OPEN&quot;,\r\n    &quot;assignee&quot;: &quot;SebastianASU2005&quot;\r\n  }\r\n}</component>\r\n  <component name=\"GithubPullRequestsUISettings\"><![CDATA[{\r\n  \"selectedUrlAndAccountId\": {\r\n    \"url\": \"https://github.com/santtiojeda8/backendWeb.git\",\r\n    \"accountId\": \"c978bfe3-8077-448a-a8f0-a4ebdecc1d9d\"\r\n  },\r\n  \"recentNewPullRequestHead\": {\r\n    \"server\": {\r\n      \"useHttp\": false,\r\n      \"host\": \"github.com\",\r\n      \"port\": null,\r\n      \"suffix\": null\r\n    },\r\n    \"owner\": \"santtiojeda8\",\r\n    \"repository\": \"backendWeb\"\r\n  }\r\n}]]></component>\r\n  <component name=\"ProjectColorInfo\">{\r\n  &quot;associatedIndex&quot;: 8\r\n}</component>\r\n  <component name=\"ProjectId\" id=\"2xKuTLCJn40NNlV2AaTjfQ8jcTR\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\"><![CDATA[{\r\n  \"keyToString\": {\r\n    \"Application.EcommerceApplication.executor\": \"Run\",\r\n    \"Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle.executor\": \"Run\",\r\n    \"Gradle.Download Sources.executor\": \"Run\",\r\n    \"Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor\": \"Run\",\r\n    \"ModuleVcsDetector.initialDetectionPerformed\": \"true\",\r\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\r\n    \"RunOnceActivity.git.unshallow\": \"true\",\r\n    \"git-widget-placeholder\": \"#1 on Reverting in RamaSeba\",\r\n    \"ignore.virus.scanning.warn.message\": \"true\",\r\n    \"project.structure.last.edited\": \"Project\",\r\n    \"project.structure.proportion\": \"0.15\",\r\n    \"project.structure.side.proportion\": \"0.0\"\r\n  }\r\n}]]></component>\r\n  <component name=\"RunManager\" selected=\"Application.Unnamed\">\r\n    <configuration name=\"Unnamed\" type=\"Application\" factoryName=\"Application\" nameIsGenerated=\"true\">\r\n      <option name=\"ALTERNATIVE_JRE_PATH\" value=\"20\" />\r\n      <option name=\"ALTERNATIVE_JRE_PATH_ENABLED\" value=\"true\" />\r\n      <option name=\"MAIN_CLASS_NAME\" value=\"com.ecommerce.ecommerce.EcommerceApplication\" />\r\n      <module name=\"ecommerce.main\" />\r\n      <method v=\"2\">\r\n        <option name=\"Make\" enabled=\"true\" />\r\n      </method>\r\n    </configuration>\r\n    <configuration name=\"C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle\" type=\"GradleRunConfiguration\" factoryName=\"Gradle\" temporary=\"true\">\r\n      <ExternalSystemSettings>\r\n        <option name=\"executionName\" />\r\n        <option name=\"externalProjectPath\" value=\"$PROJECT_DIR$/E-commerce_Project/build.gradle\" />\r\n        <option name=\"externalSystemIdString\" value=\"GRADLE\" />\r\n        <option name=\"scriptParameters\" />\r\n        <option name=\"taskDescriptions\">\r\n          <list />\r\n        </option>\r\n        <option name=\"taskNames\">\r\n          <list />\r\n        </option>\r\n        <option name=\"vmOptions\" />\r\n      </ExternalSystemSettings>\r\n      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>\r\n      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>\r\n      <DebugAllEnabled>false</DebugAllEnabled>\r\n      <RunAsTest>false</RunAsTest>\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <list>\r\n      <item itemvalue=\"Application.Unnamed\" />\r\n      <item itemvalue=\"Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle\" />\r\n    </list>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"8a0af119-c1d2-48ff-a2d4-3e57944b3cc8\" name=\"Changes\" comment=\"\" />\r\n      <created>1747699092218</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1747699092218</updated>\r\n    </task>\r\n    <task id=\"LOCAL-00001\" summary=\"&quot;UserProfile casi terminado faltan algunos toques&quot;\">\r\n      <option name=\"closed\" value=\"true\" />\r\n      <created>1747790956942</created>\r\n      <option name=\"number\" value=\"00001\" />\r\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\r\n      <option name=\"project\" value=\"LOCAL\" />\r\n      <updated>1747790956942</updated>\r\n    </task>\r\n    <option name=\"localTasksCounter\" value=\"2\" />\r\n    <servers />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <MESSAGE value=\"&quot;UserProfile casi terminado faltan algunos toques&quot;\" />\r\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"&quot;UserProfile casi terminado faltan algunos toques&quot;\" />\r\n  </component>\r\n  <component name=\"XDebuggerManager\">\r\n    <breakpoint-manager>\r\n      <breakpoints>\r\n        <breakpoint enabled=\"true\" type=\"java-exception\">\r\n          <properties class=\"java.lang.IllegalStateException\" package=\"java.lang\" />\r\n          <option name=\"timeStamp\" value=\"1\" />\r\n        </breakpoint>\r\n        <line-breakpoint enabled=\"true\" type=\"java-line\">\r\n          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>\r\n          <line>60</line>\r\n          <option name=\"timeStamp\" value=\"3\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" type=\"java-line\">\r\n          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>\r\n          <line>66</line>\r\n          <option name=\"timeStamp\" value=\"4\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" type=\"java-line\">\r\n          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>\r\n          <line>54</line>\r\n          <option name=\"timeStamp\" value=\"6\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" type=\"java-line\">\r\n          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>\r\n          <line>70</line>\r\n          <option name=\"timeStamp\" value=\"7\" />\r\n        </line-breakpoint>\r\n        <line-breakpoint enabled=\"true\" type=\"java-line\">\r\n          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>\r\n          <line>64</line>\r\n          <option name=\"timeStamp\" value=\"9\" />\r\n        </line-breakpoint>\r\n      </breakpoints>\r\n    </breakpoint-manager>\r\n    <watches-manager>\r\n      <configuration name=\"GradleRunConfiguration\">\r\n        <watch expression=\"jwtService\" language=\"JAVA\" />\r\n      </configuration>\r\n    </watches-manager>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 485083dbfc7eb6c563d0417b99c18c0db09b374e)
++++ b/.idea/workspace.xml	(date 1749427064175)
+@@ -5,6 +5,8 @@
+   </component>
+   <component name="ChangeListManager">
+     <list default="true" id="8a0af119-c1d2-48ff-a2d4-3e57944b3cc8" name="Changes" comment="&quot;UserProfile casi terminado faltan algunos toques&quot;">
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_revert_[Changes]/shelved.patch" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_revert__Changes_.xml" beforeDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+@@ -51,22 +53,22 @@
+     &quot;assignee&quot;: &quot;SebastianASU2005&quot;
+   }
+ }</component>
+-  <component name="GithubPullRequestsUISettings"><![CDATA[{
+-  "selectedUrlAndAccountId": {
+-    "url": "https://github.com/santtiojeda8/backendWeb.git",
+-    "accountId": "c978bfe3-8077-448a-a8f0-a4ebdecc1d9d"
++  <component name="GithubPullRequestsUISettings">{
++  &quot;selectedUrlAndAccountId&quot;: {
++    &quot;url&quot;: &quot;https://github.com/santtiojeda8/backendWeb.git&quot;,
++    &quot;accountId&quot;: &quot;c978bfe3-8077-448a-a8f0-a4ebdecc1d9d&quot;
+   },
+-  "recentNewPullRequestHead": {
+-    "server": {
+-      "useHttp": false,
+-      "host": "github.com",
+-      "port": null,
+-      "suffix": null
++  &quot;recentNewPullRequestHead&quot;: {
++    &quot;server&quot;: {
++      &quot;useHttp&quot;: false,
++      &quot;host&quot;: &quot;github.com&quot;,
++      &quot;port&quot;: null,
++      &quot;suffix&quot;: null
+     },
+-    "owner": "santtiojeda8",
+-    "repository": "backendWeb"
++    &quot;owner&quot;: &quot;santtiojeda8&quot;,
++    &quot;repository&quot;: &quot;backendWeb&quot;
+   }
+-}]]></component>
++}</component>
+   <component name="ProjectColorInfo">{
+   &quot;associatedIndex&quot;: 8
+ }</component>
+@@ -78,17 +80,19 @@
+   <component name="PropertiesComponent"><![CDATA[{
+   "keyToString": {
+     "Application.EcommerceApplication.executor": "Run",
++    "Application.Unnamed.executor": "Run",
+     "Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle.executor": "Run",
+     "Gradle.Download Sources.executor": "Run",
+     "Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor": "Run",
+     "ModuleVcsDetector.initialDetectionPerformed": "true",
+     "RunOnceActivity.ShowReadmeOnStart": "true",
+     "RunOnceActivity.git.unshallow": "true",
+-    "git-widget-placeholder": "#1 on Reverting in RamaSeba",
++    "git-widget-placeholder": "main",
+     "ignore.virus.scanning.warn.message": "true",
+-    "project.structure.last.edited": "Project",
++    "last_opened_file_path": "E:/Programacion Tareas/Prog/Metolodogia/Gonzales/Back3/backendWeb",
++    "project.structure.last.edited": "Modules",
+     "project.structure.proportion": "0.15",
+-    "project.structure.side.proportion": "0.0"
++    "project.structure.side.proportion": "0.2"
+   }
+ }]]></component>
+   <component name="RunManager" selected="Application.Unnamed">

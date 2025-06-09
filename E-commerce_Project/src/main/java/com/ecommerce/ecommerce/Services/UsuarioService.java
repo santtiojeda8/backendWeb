@@ -1,7 +1,5 @@
 package com.ecommerce.ecommerce.Services;
 
-// ... (todas tus importaciones existentes)
-
 import com.ecommerce.ecommerce.Entities.Direccion;
 import com.ecommerce.ecommerce.Entities.Localidad;
 import com.ecommerce.ecommerce.Entities.Usuario;
@@ -20,7 +18,7 @@ import com.ecommerce.ecommerce.dto.UserProfileUpdateDTO;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // <-- ¡Usar esta importación para @Transactional!
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -126,7 +124,7 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         }
 
         if (updateDTO.getAddresses() != null) {
-            Hibernate.initialize(usuario.getDirecciones()); // Asegurar que las direcciones estén cargadas
+            Hibernate.initialize(usuario.getDirecciones());
 
             Set<Direccion> direccionesEnviadasYActualizadas = new HashSet<>();
 
@@ -244,6 +242,8 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         if (usuario.getImagenUser() != null) {
             Hibernate.initialize(usuario.getImagenUser());
             imagenDTO = mapToImagenDTO(usuario.getImagenUser());
+            // No mapear la propiedad 'activo' de la imagen aquí, ya que no corresponde al usuario
+            // imagenDTO.setActivo(imagen.isActivo()); // <--- ¡EVITAR ESTO!
         }
 
         return UserDTO.builder()
@@ -259,6 +259,7 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
                 .addresses(direccionDTOS)
                 .role(usuario.getRol())
                 .imagenUser(imagenDTO)
+                .activo(usuario.isActivo()) // <--- ¡AÑADIR ESTA LÍNEA!
                 .build();
     }
 
@@ -409,14 +410,11 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         return mapToUserDTO(savedUsuario);
     }
 
-    // Este método ya lo tenías, solo que ahora se usa para obtener el ID de un usuario ACTIVO
-    // para las operaciones de seguridad (ej. getCurrentUser, updateProfile)
     @Transactional(readOnly = true)
     public Optional<Usuario> findByUserNameAndActivoTrue(String username) {
         return usuarioRepository.findByUserNameAndActivoTrue(username);
     }
 
-    // Este es el método que debe ser único y lo usamos para obtener el ID del usuario autenticado.
     @Transactional(readOnly = true)
     public Long getUserIdByUsernameOrEmail(String usernameOrEmail) {
         try {
@@ -535,6 +533,8 @@ public class UsuarioService extends BaseService<Usuario,Long> implements UserDet
         }
 
         usuario.setActivo(false);
+        // Ojo: al desactivar, se limpia el email y username para permitir su reutilización.
+        // Si necesitas mantenerlos para auditoría, ajusta esto.
         usuario.setEmail(null);
         usuario.setUserName("deactivated_" + UUID.randomUUID().toString());
 

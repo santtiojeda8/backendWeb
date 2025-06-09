@@ -29,4 +29,5 @@ public class UserDTO {
     private Rol role;
     private ImagenDTO imagenUser;
     private List<DireccionDTO> addresses;
+    private boolean activo; // <--- ¡AÑADIR ESTE CAMPO AQUÍ!
 }

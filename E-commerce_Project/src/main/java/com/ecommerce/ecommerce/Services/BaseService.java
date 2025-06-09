@@ -106,4 +106,24 @@ public class BaseService<E extends Base, ID extends Serializable> {
             throw new Exception("Error al intentar eliminar físicamente la entidad: " + e.getMessage());
         }
     }
+
+    // --- NUEVOS MÉTODOS PARA ADMINISTRADORES ---
+    @Transactional(readOnly = true)
+    public List<E> findAll() throws Exception {
+        try {
+            return baseRepository.findAll(); // Obtiene todas las entidades, sin filtrar por activo
+        } catch (Exception e) {
+            throw new Exception("Error al obtener todas las entidades (incluyendo inactivas): " + e.getMessage());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public E buscarPorIdIncluyendoInactivos(ID id) throws Exception {
+        try {
+            return baseRepository.findById(id) // Busca por ID sin importar el estado 'activo'
+                    .orElseThrow(() -> new Exception("Entidad no encontrada con ID: " + id));
+        } catch (Exception e) {
+            throw new Exception("Error al buscar entidad por ID (incluyendo inactivos): " + e.getMessage());
+        }
+    }
 }
