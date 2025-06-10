@@ -93,9 +93,38 @@ public class ProductoService extends BaseService<Producto, Long> {
         }
     }
 
+    // --- NUEVOS MÉTODOS PARA ADMINISTRACIÓN (TODOS LOS PRODUCTOS, ACTIVOS E INACTIVOS) ---
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> obtenerTodosLosProductosParaAdmin() throws Exception {
+        try {
+            // Llama al método findAll() de BaseService que no filtra por activo
+            List<Producto> productos = super.findAll();
+            productos.forEach(Producto::calcularPrecioFinal); // Asegurarse de calcular el precio final
+            return productos.stream()
+                    .map(this::mapearProductoADTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new Exception("Error al obtener todos los productos para administración: " + e.getMessage());
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ProductoDTO obtenerProductoDTOPorIdIncluyendoInactivos(Long id) throws Exception {
+        try {
+            // Llama al método buscarPorIdIncluyendoInactivos() de BaseService
+            Producto producto = super.buscarPorIdIncluyendoInactivos(id);
+            producto.calcularPrecioFinal(); // Asegurarse de calcular el precio final
+            return mapearProductoADTO(producto);
+        } catch (Exception e) {
+            throw new Exception("Error al obtener producto por ID (para administración, incluyendo inactivos): " + e.getMessage());
+        }
+    }
+    // --- FIN NUEVOS MÉTODOS PARA ADMINISTRACIÓN ---
+
+
     @Transactional(readOnly = true)
     public List<ProductoDTO> obtenerTodosLosProductosDTO() throws Exception {
-        List<Producto> productos = listar();
+        List<Producto> productos = listar(); // Este ya usa findAllByActivoTrueWithDescuento
         return productos.stream()
                 .map(this::mapearProductoADTO)
                 .collect(Collectors.toList());
@@ -103,7 +132,7 @@ public class ProductoService extends BaseService<Producto, Long> {
 
     @Transactional(readOnly = true)
     public ProductoDTO obtenerProductoDTOPorId(Long id) throws Exception {
-        Producto producto = buscarPorId(id);
+        Producto producto = buscarPorId(id); // Este ya usa findByIdAndActivoTrueWithDescuento
         return mapearProductoADTO(producto);
     }
 
@@ -137,9 +166,6 @@ public class ProductoService extends BaseService<Producto, Long> {
 
         producto = productoRepository.save(producto);
 
-        // Lógica para cargar nuevas imágenes (creación)
-        // **Este bloque se mantiene similar, pero sin guardar cada imagen con imagenRepository.save()**
-        // **La cascada se encargará al guardar el producto al final.**
         if (newImageFiles != null && !newImageFiles.isEmpty()) {
             for (MultipartFile file : newImageFiles) {
                 Map<?, ?> uploadResult = cloudinaryService.uploadImage(file);
@@ -147,14 +173,12 @@ public class ProductoService extends BaseService<Producto, Long> {
 
                 Imagen nuevaImagen = new Imagen();
                 nuevaImagen.setUrl(imageUrl);
-                nuevaImagen.setProducto(producto); // Asigna el producto padre
-                nuevaImagen.setActivo(true); // Las nuevas imágenes están activas por defecto
-                producto.getImagenes().add(nuevaImagen); // Añade a la colección del producto
-                // No necesitas imagenRepository.save(nuevaImagen) aquí si tienes CascadeType.ALL
+                nuevaImagen.setProducto(producto);
+                nuevaImagen.setActivo(true);
+                producto.getImagenes().add(nuevaImagen);
             }
         }
 
-        // Lógica para añadir detalles de producto (para la creación)
         if (productoRequestDTO.getProductos_detalles() != null) {
             for (ProductoDetalleRequestDTO detalleRequest : productoRequestDTO.getProductos_detalles()) {
                 ProductoDetalle detalle = new ProductoDetalle();
@@ -169,20 +193,21 @@ public class ProductoService extends BaseService<Producto, Long> {
                 detalle.setTalle(talleRepository.findById(detalleRequest.getTalleId())
                         .orElseThrow(() -> new EntityNotFoundException("Talle con ID " + detalleRequest.getTalleId() + " no encontrado.")));
 
-                productoDetalleRepository.save(detalle); // Se mantiene el save explícito para detalles si no usas cascade en detalles
+                productoDetalleRepository.save(detalle);
                 producto.getProductos_detalles().add(detalle);
             }
         }
 
         producto.calcularPrecioFinal();
-        // Guardar el producto, lo cual cascadeará las operaciones a las imágenes recién añadidas
         return mapearProductoADTO(productoRepository.save(producto));
     }
 
 
     @Transactional
     public ProductoDTO actualizarProducto(Long id, ProductoRequestDTO productoRequestDTO, List<MultipartFile> newImageFiles) throws Exception {
-        Producto productoExistente = buscarPorId(id);
+        // *** CAMBIO REALIZADO AQUÍ: Ahora busca el producto incluso si está inactivo ***
+        Producto productoExistente = super.buscarPorIdIncluyendoInactivos(id);
+        // El resto de la lógica de actualización permanece igual.
         actualizarProductoDesdeDTO(productoExistente, productoRequestDTO);
 
         // Lógica para actualizar el descuento
@@ -229,7 +254,6 @@ public class ProductoService extends BaseService<Producto, Long> {
 
         // 2. Cargar y añadir nuevas imágenes desde MultipartFile (imágenes recién subidas)
         if (newImageFiles != null && !newImageFiles.isEmpty()) {
-            // Opcional: Para evitar subir la misma imagen de Cloudinary varias veces (aunque Cloudinary ya da URL única)
             Set<String> currentAndNewImageUrls = imagesToPersist.stream().map(Imagen::getUrl).collect(Collectors.toSet());
 
             for (MultipartFile file : newImageFiles) {
@@ -239,22 +263,18 @@ public class ProductoService extends BaseService<Producto, Long> {
                 if (!currentAndNewImageUrls.contains(imageUrl)) {
                     Imagen newImage = Imagen.builder()
                             .url(imageUrl)
-                            .activo(true) // Las nuevas imágenes están activas por defecto
-                            .producto(productoExistente) // Establecer la relación
+                            .activo(true)
+                            .producto(productoExistente)
                             .build();
                     imagesToPersist.add(newImage);
-                    currentAndNewImageUrls.add(imageUrl); // Añadir para futuras comprobaciones en el mismo bucle
+                    currentAndNewImageUrls.add(imageUrl);
                 }
             }
         }
 
         // 3. Reemplazar la colección de imágenes del producto existente.
-        // Esto activará el orphanRemoval para las imágenes que no estén en 'imagesToPersist'
-        // y la cascada para las nuevas/modificadas.
-        productoExistente.getImagenes().clear(); // Limpia la colección existente
-        productoExistente.getImagenes().addAll(imagesToPersist); // Añade todas las imágenes procesadas
-
-        // Asegurarse de que la referencia bidireccional se mantenga si por alguna razón se perdió
+        productoExistente.getImagenes().clear();
+        productoExistente.getImagenes().addAll(imagesToPersist);
         productoExistente.getImagenes().forEach(img -> img.setProducto(productoExistente));
         // --- FIN: Lógica OPTIMIZADA para la GESTIÓN de IMÁGENES ---
 
@@ -388,9 +408,9 @@ public class ProductoService extends BaseService<Producto, Long> {
             BigDecimal minPrice, BigDecimal maxPrice, List<String> colores, List<String> talles,
             Integer stockMinimo, String orderBy, String orderDirection) throws Exception {
         try {
-            Specification<Producto> finalSpec = ProductoSpecification.withFilters(
+            Specification<Producto> finalSpec = com.ecommerce.ecommerce.Specifications.ProductoSpecification.withFilters(
                     denominacion, categorias, sexo, tienePromocion, minPrice, maxPrice, colores, talles, stockMinimo
-            ).and(ProductoSpecification.byActivo(true));
+            ).and(com.ecommerce.ecommerce.Specifications.ProductoSpecification.byActivo(true));
 
             Sort sort = Sort.unsorted();
             if (orderBy != null && !orderBy.isEmpty()) {
@@ -417,6 +437,7 @@ public class ProductoService extends BaseService<Producto, Long> {
     @Transactional
     public ProductoDTO activarProducto(Long id) throws Exception {
         try {
+            // Este método ya utiliza findById (sin filtro por activo) y luego lo activa. Es correcto.
             Optional<Producto> productoOptional = productoRepository.findById(id);
             if (productoOptional.isEmpty()) {
                 throw new EntityNotFoundException("Producto con ID " + id + " no encontrado para activar.");
@@ -432,6 +453,7 @@ public class ProductoService extends BaseService<Producto, Long> {
     @Transactional
     public void eliminarProductoPorId(Long id) throws Exception {
         try {
+            // Este método ya utiliza findById (sin filtro por activo) y luego lo desactiva. Es correcto.
             Optional<Producto> productoOptional = productoRepository.findById(id);
             if (productoOptional.isEmpty()) {
                 throw new EntityNotFoundException("Producto con ID " + id + " no encontrado para desactivar.");
@@ -483,14 +505,14 @@ public class ProductoService extends BaseService<Producto, Long> {
 
         productoDTO.setImagenes(producto.getImagenes() != null ?
                 producto.getImagenes().stream()
-                        .filter(Imagen::isActivo)
+                        .filter(Imagen::isActivo) // Mantener este filtro si en el admin solo se ven imágenes activas
                         .map(imagenEntity -> new ImagenDTO(imagenEntity.getId(), imagenEntity.getUrl(), imagenEntity.isActivo()))
                         .collect(Collectors.toList()) :
                 Collections.emptyList());
 
         productoDTO.setProductos_detalles(producto.getProductos_detalles() != null ?
                 producto.getProductos_detalles().stream()
-                        .filter(ProductoDetalle::isActivo)
+                        .filter(ProductoDetalle::isActivo) // Mantener este filtro si en el admin solo se ven detalles activos
                         .map(this::mapearProductoDetalleADTO)
                         .collect(Collectors.toList()) :
                 Collections.emptyList());

@@ -13,11 +13,12 @@ public class TalleController extends BaseController<Talle, Long> {
     private final TalleService talleService;
 
     public TalleController(TalleService talleService) {
-        super(talleService);
+        super(talleService); // Pasa el servicio específico al constructor de BaseController
         this.talleService = talleService;
     }
 
     // Endpoint específico para buscar un talle por su nombre
+    // Puedes mantenerlo aquí si es específico de Talle, o moverlo a BaseController si es genérico.
     @GetMapping("/nombre/{nombre}")
     public ResponseEntity<Talle> buscarPorNombre(@PathVariable String nombre) {
         try {
@@ -31,5 +32,6 @@ public class TalleController extends BaseController<Talle, Long> {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
+    // No necesitas implementar los métodos de CRUD o toggle aquí, ya se heredan de BaseController.
+    // Solo si necesitas una lógica específica para Talle que difiera de la base.
 }

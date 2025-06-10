@@ -6,7 +6,7 @@ import com.ecommerce.ecommerce.dto.DescuentoDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal; // Import for BigDecimal
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -17,12 +17,10 @@ public class DescuentosService extends BaseService<Descuento, Long> {
     private final DescuentosRepository descuentosRepository;
 
     public DescuentosService(DescuentosRepository descuentosRepository) {
-        super(descuentosRepository); // Llama al constructor de BaseService
+        super(descuentosRepository);
         this.descuentosRepository = descuentosRepository;
     }
 
-    // --- Métodos de Mapeo (Entidad a DTO) ---
-    // Make this public if you need to reuse it outside, e.g., in ProductoService
     public DescuentoDTO mapearDescuentoADTO(Descuento descuento) {
         if (descuento == null) {
             return null;
@@ -35,23 +33,16 @@ public class DescuentosService extends BaseService<Descuento, Long> {
         dto.setHoraDesde(descuento.getHoraDesde());
         dto.setHoraHasta(descuento.getHoraHasta());
         dto.setDescripcionDescuento(descuento.getDescripcionDescuento());
-        // Ensure that both entity and DTO use BigDecimal for promotional price
         dto.setPrecioPromocional(descuento.getPrecioPromocional());
         dto.setActivo(descuento.isActivo());
         return dto;
     }
 
-    // --- Métodos de Mapeo (DTO a Entidad para Creación/Actualización) ---
-    // Make this public if you need to reuse it outside, e.g., in testing
     public Descuento mapearDTOaDescuento(DescuentoDTO dto) {
         if (dto == null) {
             return null;
         }
         Descuento descuento = new Descuento();
-        // ID is handled in update method logic. For creation, it's null.
-        // If dto.getId() is passed for creation, JPA might try to update existing.
-        // It's safer to not set ID here for creation and let JPA generate it.
-        // For updates, the existing entity's ID is retained.
         if (dto.getId() != null) {
             descuento.setId(dto.getId());
         }
@@ -61,7 +52,6 @@ public class DescuentosService extends BaseService<Descuento, Long> {
         descuento.setHoraDesde(dto.getHoraDesde());
         descuento.setHoraHasta(dto.getHoraHasta());
         descuento.setDescripcionDescuento(dto.getDescripcionDescuento());
-        // Ensure that both entity and DTO use BigDecimal for promotional price
         descuento.setPrecioPromocional(dto.getPrecioPromocional());
         descuento.setActivo(dto.isActivo());
         return descuento;
@@ -73,8 +63,9 @@ public class DescuentosService extends BaseService<Descuento, Long> {
     @Transactional(readOnly = true)
     public List<DescuentoDTO> listarDTOs() throws Exception {
         try {
-            // super.listar() already fetches only active ones based on BaseRepository
-            List<Descuento> descuentos = super.listar();
+            // Este método ahora debe llamar a findAll() en BaseService
+            // para obtener TODOS los descuentos (activos e inactivos) para el panel de administración
+            List<Descuento> descuentos = super.findAll(); // <--- CAMBIO IMPORTANTE AQUÍ
             return descuentos.stream()
                     .map(this::mapearDescuentoADTO)
                     .collect(Collectors.toList());
@@ -88,7 +79,8 @@ public class DescuentosService extends BaseService<Descuento, Long> {
     @Transactional(readOnly = true)
     public DescuentoDTO obtenerDescuentoDTOPorId(Long id) throws Exception {
         try {
-            Descuento descuento = super.buscarPorId(id); // This will throw if not found or inactive
+            // Usa buscarPorIdIncluyendoInactivos para permitir ver descuentos inactivos en edición
+            Descuento descuento = super.buscarPorIdIncluyendoInactivos(id); // <--- CAMBIO IMPORTANTE AQUÍ
             return mapearDescuentoADTO(descuento);
         } catch (Exception e) {
             System.err.println("Error al obtener el descuento DTO por ID " + id + ": " + e.getMessage());
@@ -99,18 +91,16 @@ public class DescuentosService extends BaseService<Descuento, Long> {
 
     @Transactional
     public DescuentoDTO crearDescuento(DescuentoDTO dto) throws Exception {
-        // For creation, ensure ID is null to let JPA assign it
         if (dto.getId() != null) {
             throw new IllegalArgumentException("ID must be null for new discount creation.");
         }
         Descuento descuentoAcrear = mapearDTOaDescuento(dto);
-        validarDescuento(descuentoAcrear); // Validate before saving
+        // La validación de fechas/horas se hará en el frontend.
+        // Aquí solo validamos reglas de negocio intrínsecas a la entidad si es necesario.
+        validarDescuento(descuentoAcrear); // Validar antes de guardar
         try {
-            // Set activo to true by default for new entities if not set by DTO or business rule
-            if (!descuentoAcrear.isActivo()) {
-                descuentoAcrear.setActivo(true);
-            }
-            Descuento savedDescuento = super.crear(descuentoAcrear); // BaseService.crear() ensures active=true
+            // super.crear() ya se encarga de setActivo(true)
+            Descuento savedDescuento = super.crear(descuentoAcrear);
             return mapearDescuentoADTO(savedDescuento);
         } catch (Exception e) {
             System.err.println("Error al crear el descuento desde DTO: " + e.getMessage());
@@ -125,13 +115,12 @@ public class DescuentosService extends BaseService<Descuento, Long> {
             throw new IllegalArgumentException("ID no puede ser nulo para la actualización.");
         }
         if (dto.getId() != null && !id.equals(dto.getId())) {
-            // This check prevents cases where the path variable ID differs from the DTO body ID
             throw new IllegalArgumentException("El ID de la URL no coincide con el ID del cuerpo del DTO.");
         }
 
-        Descuento descuentoExistente = super.buscarPorId(id); // This will throw if not found or inactive
+        // Buscar el descuento incluyendo inactivos para poder actualizar también los inactivos
+        Descuento descuentoExistente = super.buscarPorIdIncluyendoInactivos(id); // <--- CAMBIO IMPORTANTE AQUÍ
 
-        // Update properties from DTO to existing entity
         descuentoExistente.setDenominacion(dto.getDenominacion());
         descuentoExistente.setFechaDesde(dto.getFechaDesde());
         descuentoExistente.setFechaHasta(dto.getFechaHasta());
@@ -139,9 +128,9 @@ public class DescuentosService extends BaseService<Descuento, Long> {
         descuentoExistente.setHoraHasta(dto.getHoraHasta());
         descuentoExistente.setDescripcionDescuento(dto.getDescripcionDescuento());
         descuentoExistente.setPrecioPromocional(dto.getPrecioPromocional());
-        descuentoExistente.setActivo(dto.isActivo()); // Allow updating active status
+        descuentoExistente.setActivo(dto.isActivo());
 
-        validarDescuento(descuentoExistente); // Validate updated entity
+        validarDescuento(descuentoExistente); // Validar la entidad actualizada
         try {
             Descuento updatedDescuento = super.actualizar(descuentoExistente);
             return mapearDescuentoADTO(updatedDescuento);
@@ -152,19 +141,35 @@ public class DescuentosService extends BaseService<Descuento, Long> {
         }
     }
 
-    // Soft delete method (from BaseService, public for direct call)
+    /**
+     * Mapea y llama al toggleStatus del BaseService.
+     * Este es el método que usará el frontend para cambiar el estado activo/inactivo.
+     * @param id El ID del descuento.
+     * @param currentStatus El estado actual del descuento (true si está activo, false si está inactivo).
+     * @return El DTO del descuento actualizado con su nuevo estado.
+     * @throws Exception Si el descuento no se encuentra o hay un error.
+     */
     @Transactional
-    public void eliminarDescuento(Long id) throws Exception {
+    public DescuentoDTO toggleDiscountStatus(Long id, boolean currentStatus) throws Exception {
         try {
-            super.eliminar(id); // Calls the soft delete method in BaseService
+            // Llama al método toggleStatus del BaseService que invierte el estado 'activo'
+            Descuento updatedDescuento = super.toggleStatus(id, currentStatus);
+            return mapearDescuentoADTO(updatedDescuento);
         } catch (Exception e) {
-            System.err.println("Error al eliminar (desactivar) el descuento por ID " + id + ": " + e.getMessage());
+            System.err.println("Error al cambiar el estado del descuento (ID: " + id + "): " + e.getMessage());
             e.printStackTrace();
-            throw new Exception("Error al eliminar (desactivar) el descuento: " + e.getMessage());
+            throw new Exception("Error al cambiar el estado del descuento: " + e.getMessage());
         }
     }
 
-    // New method to activate a discount
+    // ELIMINAMOS el método eliminarDescuento que llamaba a super.eliminar(id);
+    // Ahora, cualquier "eliminación" lógica se hará a través de toggleDiscountStatus(id, true)
+    // es decir, un toggle que desactiva el descuento.
+
+    // El método 'activarDescuento' ahora es redundante si usas toggleDiscountStatus
+    // ya que toggleDiscountStatus(id, false) hará lo mismo.
+    // Lo comento, pero puedes decidir si quieres mantenerlo por claridad o eliminarlo.
+    /*
     @Transactional
     public DescuentoDTO activarDescuento(Long id) throws Exception {
         try {
@@ -185,7 +190,7 @@ public class DescuentosService extends BaseService<Descuento, Long> {
             throw new Exception("Error al activar descuento: " + e.getMessage());
         }
     }
-
+    */
 
     // --- Método de validación de descuento (se mantiene igual) ---
     private void validarDescuento(Descuento descuento) throws Exception {
@@ -199,17 +204,18 @@ public class DescuentosService extends BaseService<Descuento, Long> {
             if (descuento.getFechaDesde().isAfter(descuento.getFechaHasta())) {
                 throw new IllegalArgumentException("La fecha de inicio del descuento no puede ser posterior a la fecha de fin.");
             }
-            // HoraDesde y HoraHasta pueden ser nulas si el descuento aplica todo el día
             if (descuento.getHoraDesde() != null && descuento.getHoraHasta() != null &&
-                    descuento.getHoraDesde().isAfter(descuento.getHoraHasta())) {
-                throw new IllegalArgumentException("La hora de inicio del descuento no puede ser posterior a la hora de fin.");
+                    (descuento.getFechaDesde().isEqual(descuento.getFechaHasta())) && // Solo compara horas si las fechas son las mismas
+                    (descuento.getHoraDesde().isAfter(descuento.getHoraHasta()))) {
+                throw new IllegalArgumentException("La hora de inicio del descuento no puede ser posterior a la hora de fin en el mismo día.");
             }
-            if (descuento.getPrecioPromocional() == null || descuento.getPrecioPromocional().compareTo(BigDecimal.ZERO) < 0 || descuento.getPrecioPromocional().compareTo(BigDecimal.ONE) > 0) {
-                // Assuming precioPromocional is a factor (0.0 to 1.0)
+            // Validar que el precio promocional esté entre 0 y 1 (factor de descuento)
+            if (descuento.getPrecioPromocional() == null ||
+                    descuento.getPrecioPromocional().compareTo(BigDecimal.ZERO) < 0 ||
+                    descuento.getPrecioPromocional().compareTo(BigDecimal.ONE) > 0) {
                 throw new IllegalArgumentException("El precio promocional debe ser un valor entre 0.0 y 1.0 (factor de descuento).");
             }
         } catch (IllegalArgumentException e) {
-            // Catch specific IllegalArgumentExceptions and re-throw them without wrapping
             System.err.println("Error de validación: " + e.getMessage());
             throw e;
         } catch (Exception e) {

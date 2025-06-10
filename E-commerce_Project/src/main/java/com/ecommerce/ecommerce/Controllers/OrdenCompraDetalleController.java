@@ -95,18 +95,5 @@ public class OrdenCompraDetalleController extends BaseController<OrdenCompraDeta
         }
     }
 
-    @Override
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Long id) {
-        try {
-            ordenCompraDetalleService.eliminar(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } catch (Exception e) {
-            logger.error("Error al eliminar lógicamente detalle de orden de compra ID {}: {}", id, e.getMessage(), e);
-            if (e.getMessage().contains("no encontrada")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
-    }
+
 }

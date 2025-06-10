@@ -105,23 +105,6 @@ public class OrdenCompraController extends BaseController<OrdenCompra, Long> {
 
     // --- Otros métodos específicos (eliminar, por usuario, por fecha) ---
 
-    @Override
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Long id) {
-        try {
-            ordenCompraService.eliminar(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } catch (RuntimeException e) {
-            logger.error("Error al eliminar lógicamente orden de compra ID {}: {}", id, e.getMessage(), e); // Usar logger
-            if (e.getMessage().contains("no encontrada")) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        } catch (Exception e) {
-            logger.error("Error inesperado al eliminar lógicamente orden de compra ID {}: {}", id, e.getMessage(), e); // Usar logger
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor al eliminar la orden de compra.");
-        }
-    }
 
     @GetMapping("/fecha")
     public ResponseEntity<?> obtenerPorFecha(@RequestParam("fecha") String fecha) {

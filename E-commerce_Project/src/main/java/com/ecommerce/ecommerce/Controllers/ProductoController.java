@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartFile; // Necesario si manejas carga de imágenes con estos endpoints
 
 import java.util.List;
 
@@ -26,6 +26,35 @@ public class ProductoController {
         this.productoService = productoService;
     }
 
+    // --- Endpoints para la Administración (incluyen productos inactivos) ---
+    @GetMapping("/admin") // Endpoint para obtener TODOS los productos (activos e inactivos) para la administración
+    public ResponseEntity<List<ProductoDTO>> obtenerTodosLosProductosParaAdmin() {
+        try {
+            List<ProductoDTO> productosDTO = productoService.obtenerTodosLosProductosParaAdmin();
+            return ResponseEntity.ok(productosDTO); // 200 OK
+        } catch (Exception e) {
+            System.err.println("Error en el controlador al obtener todos los productos (admin): " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/admin/{id}") // Endpoint para obtener un producto específico (activo o inactivo) por ID para la administración
+    public ResponseEntity<ProductoDTO> obtenerProductoDTOPorIdAdmin(@PathVariable Long id) {
+        try {
+            ProductoDTO productoDTO = productoService.obtenerProductoDTOPorIdIncluyendoInactivos(id);
+            return ResponseEntity.ok(productoDTO); // 200 OK
+        } catch (EntityNotFoundException e) {
+            System.err.println("Producto no encontrado (activo o inactivo, ID: " + id + ") para administración: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // 404 Not Found
+        } catch (Exception e) {
+            System.err.println("Error en el controlador al obtener Producto DTO por ID (admin, ID: " + id + "): " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+    // --- FIN: Endpoints para la Administración ---
+
 
     @GetMapping("/promociones") // Obtiene todos los productos activos con descuento/promoción
     public ResponseEntity<List<ProductoDTO>> obtenerProductosDTOConDescuento() {
@@ -40,7 +69,7 @@ public class ProductoController {
         }
     }
 
-    @GetMapping("") // Obtiene todos los productos activos
+    @GetMapping("") // Obtiene todos los productos activos (para el cliente/público)
     public ResponseEntity<List<ProductoDTO>> obtenerTodosLosProductosDTO() {
         try {
             List<ProductoDTO> productosDTO = productoService.obtenerTodosLosProductosDTO();
@@ -52,7 +81,7 @@ public class ProductoController {
         }
     }
 
-    @GetMapping("/{id}") // Obtiene un producto activo por ID
+    @GetMapping("/{id}") // Obtiene un producto activo por ID (para el cliente/público)
     public ResponseEntity<ProductoDTO> obtenerProductoDTOPorId(@PathVariable Long id) {
         try {
             ProductoDTO productoDTO = productoService.obtenerProductoDTOPorId(id);
@@ -69,7 +98,7 @@ public class ProductoController {
         }
     }
 
-    @GetMapping("/buscar") // Busca productos por denominación (palabra clave)
+    @GetMapping("/buscar") // Busca productos activos por denominación (palabra clave)
     public ResponseEntity<List<ProductoDTO>> buscarProductosPorNombre(@RequestParam String keyword) {
         try {
             List<ProductoDTO> productosDTO = productoService.buscarProductosPorDenominacion(keyword);
@@ -80,7 +109,6 @@ public class ProductoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
 
     @GetMapping("/categorias") // Obtiene una lista de todas las categorías disponibles
     public ResponseEntity<List<String>> getAllAvailableCategories() {
@@ -120,10 +148,9 @@ public class ProductoController {
 
     @PostMapping("/filtrar") // Permite filtrar y ordenar productos usando un objeto ProductFilters en el cuerpo de la solicitud
     public ResponseEntity<List<ProductoDTO>> filtrarYOrdenarProductos(
-            @RequestBody(required = false) ProductFilters filters // 'required = false' permite que los filtros sean opcionales
+            @RequestBody(required = false) ProductFilters filters
     ) {
         try {
-            // Si el cuerpo de la solicitud es nulo, inicializa un ProductFilters vacío para evitar NullPointerExceptions
             ProductFilters actualFilters = filters != null ? filters : new ProductFilters();
 
             List<ProductoDTO> productosFiltrados = productoService.filtrarYOrdenarProductos(
@@ -147,27 +174,31 @@ public class ProductoController {
         }
     }
 
+    // Nota: Los métodos 'crearProducto', 'actualizarProducto', 'desactivarProducto' y 'activarProducto'
+    // ya operan sobre la entidad sin verificar 'activo' al buscarla, o la establecen.
+    // Puedes decidir si también quieres rutas /admin para ellos o si los mismos endpoints
+    // son suficientes para la administración (lo cual es común).
 
-    @PostMapping("") // Crea un nuevo producto (sin carga de imágenes en esta request)
+    @PostMapping("") // Crea un nuevo producto
     public ResponseEntity<ProductoDTO> crearProducto(@RequestBody ProductoRequestDTO requestDTO) {
         try {
-            // El segundo parámetro 'null' indica que no hay MultipartFile para imágenes en esta solicitud.
-            // Si necesitas cargar imágenes junto con la data del producto, se requeriría un enfoque @RequestPart.
             ProductoDTO nuevoProducto = productoService.crearProducto(requestDTO, null);
-            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoProducto); // 201 Created
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoProducto);
         } catch (Exception e) {
             System.err.println("Error en el controlador al crear producto: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null); // 400 Bad Request (ej. datos inválidos)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 
     @PutMapping("/{id}") // Actualiza un producto existente
     public ResponseEntity<ProductoDTO> actualizarProducto(@PathVariable Long id, @RequestBody ProductoRequestDTO requestDTO) {
         try {
-            // Similar a crearProducto, se pasa 'null' para las imágenes si no se manejan en esta request.
+            // Este método actualmente solo puede actualizar productos activos porque 'productoService.buscarPorId(id)'
+            // busca solo activos. Si se necesita actualizar inactivos, se necesitaría un método en el servicio
+            // que use 'super.buscarPorIdIncluyendoInactivos' y un nuevo endpoint aquí.
             ProductoDTO productoActualizado = productoService.actualizarProducto(id, requestDTO, null);
-            return ResponseEntity.ok(productoActualizado); // 200 OK
+            return ResponseEntity.ok(productoActualizado);
         } catch (EntityNotFoundException e) {
             System.err.println("Producto no encontrado para actualizar (ID: " + id + "): " + e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -181,15 +212,15 @@ public class ProductoController {
     @DeleteMapping("/{id}") // Desactiva (soft delete) un producto
     public ResponseEntity<?> desactivarProducto(@PathVariable Long id) {
         try {
-            productoService.eliminarProductoPorId(id); // Usa el método específico del servicio para soft delete
-            return ResponseEntity.noContent().build(); // 204 No Content (indica que la operación fue exitosa sin contenido de retorno)
+            productoService.eliminarProductoPorId(id);
+            return ResponseEntity.noContent().build();
         } catch (EntityNotFoundException e) {
             System.err.println("Producto no encontrado para desactivar (ID: " + id + "): " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build(); // 404 Not Found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
             System.err.println("Error al desactivar producto desde el controlador (ID: " + id + "): " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build(); // 500 Internal Server Error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -197,7 +228,7 @@ public class ProductoController {
     public ResponseEntity<ProductoDTO> activarProducto(@PathVariable Long id) {
         try {
             ProductoDTO activatedProduct = productoService.activarProducto(id);
-            return ResponseEntity.ok(activatedProduct); // 200 OK
+            return ResponseEntity.ok(activatedProduct);
         } catch (EntityNotFoundException e) {
             System.err.println("Producto no encontrado para activar (ID: " + id + "): " + e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);

@@ -8,7 +8,7 @@ import com.ecommerce.ecommerce.Repositories.ProductoDetalleRepository;
 import com.ecommerce.ecommerce.Repositories.ColorRepository;
 import com.ecommerce.ecommerce.Repositories.TalleRepository;
 import com.ecommerce.ecommerce.Repositories.ProductoRepository;
-import com.ecommerce.ecommerce.dto.ProductoDetalleDTO; // ¡Usamos este para todo ahora!
+import com.ecommerce.ecommerce.dto.ProductoDetalleDTO;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -29,24 +29,25 @@ public class ProductoDetalleService extends BaseService<ProductoDetalle, Long> {
                                   ColorRepository colorRepository,
                                   TalleRepository talleRepository,
                                   ProductoRepository productoRepository) {
-        super(productoDetalleRepository);
+        super(productoDetalleRepository); // Llama al constructor de BaseService
         this.productoDetalleRepository = productoDetalleRepository;
         this.colorRepository = colorRepository;
         this.talleRepository = talleRepository;
         this.productoRepository = productoRepository;
     }
 
-    // --- Métodos que ya devuelven List<ProductoDetalleDTO> o ProductoDetalleDTO ---
+    // --- MÉTODOS PARA EL CLIENTE (FILTRAN POR ACTIVO = TRUE) ---
 
     @Transactional(readOnly = true)
     public List<ProductoDetalleDTO> findAllByProductoId(Long productoId) throws Exception {
         try {
+            // Este método asume que es para el cliente, por eso usa AndActivoTrue
             List<ProductoDetalle> entities = productoDetalleRepository.findAllByProductoIdAndActivoTrue(productoId);
             return entities.stream()
-                    .map(ProductoDetalleDTO::new) // Usa el constructor de tu DTO
+                    .map(ProductoDetalleDTO::new)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new Exception("Error al buscar ProductoDetalles por ID de Producto: " + e.getMessage(), e);
+            throw new Exception("Error al buscar ProductoDetalles (cliente) por ID de Producto: " + e.getMessage(), e);
         }
     }
 
@@ -62,9 +63,9 @@ public class ProductoDetalleService extends BaseService<ProductoDetalle, Long> {
             if (detalleOptional.isEmpty()) {
                 throw new EntityNotFoundException("ProductoDetalle no encontrado o inactivo para el ProductoId: " + productoId + ", Talle: " + talleNombre + ", Color: " + colorNombre);
             }
-            return new ProductoDetalleDTO(detalleOptional.get()); // Usa el constructor de tu DTO
+            return new ProductoDetalleDTO(detalleOptional.get());
         } catch (Exception e) {
-            throw new Exception("Error al buscar ProductoDetalle por ProductoId, Talle y Color: " + e.getMessage(), e);
+            throw new Exception("Error al buscar ProductoDetalle (cliente) por ProductoId, Talle y Color: " + e.getMessage(), e);
         }
     }
 
@@ -73,10 +74,10 @@ public class ProductoDetalleService extends BaseService<ProductoDetalle, Long> {
         try {
             List<ProductoDetalle> entities = productoDetalleRepository.findAllByStockActualGreaterThanAndActivoTrue(stockMinimo);
             return entities.stream()
-                    .map(ProductoDetalleDTO::new) // Usa el constructor de tu DTO
+                    .map(ProductoDetalleDTO::new)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new Exception("Error al buscar ProductoDetalles con stock mayor a: " + e.getMessage(), e);
+            throw new Exception("Error al buscar ProductoDetalles (cliente) con stock mayor a: " + e.getMessage(), e);
         }
     }
 
@@ -85,20 +86,19 @@ public class ProductoDetalleService extends BaseService<ProductoDetalle, Long> {
         try {
             List<ProductoDetalle> entities = productoDetalleRepository.filtrarPorOpciones(productoId, colorNombre, talleNombre, stockMin);
             return entities.stream()
-                    .map(ProductoDetalleDTO::new) // Usa el constructor de tu DTO
+                    .map(ProductoDetalleDTO::new)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new Exception("Error al filtrar ProductoDetalles por opciones: " + e.getMessage(), e);
+            throw new Exception("Error al filtrar ProductoDetalles (cliente) por opciones: " + e.getMessage(), e);
         }
     }
 
-    // Métodos que no devuelven DTOs (List<String> o boolean)
     @Transactional(readOnly = true)
     public List<String> obtenerTallesDisponibles(Long productoId) throws Exception {
         try {
             return productoDetalleRepository.obtenerNombresTallesDisponibles(productoId);
         } catch (Exception e) {
-            throw new Exception("Error al obtener talles disponibles: " + e.getMessage(), e);
+            throw new Exception("Error al obtener talles disponibles (cliente): " + e.getMessage(), e);
         }
     }
 
@@ -107,7 +107,7 @@ public class ProductoDetalleService extends BaseService<ProductoDetalle, Long> {
         try {
             return productoDetalleRepository.obtenerNombresColoresDisponibles(productoId);
         } catch (Exception e) {
-            throw new Exception("Error al obtener colores disponibles: " + e.getMessage(), e);
+            throw new Exception("Error al obtener colores disponibles (cliente): " + e.getMessage(), e);
         }
     }
 
@@ -141,15 +141,74 @@ public class ProductoDetalleService extends BaseService<ProductoDetalle, Long> {
         }
     }
 
+    // --- NUEVOS MÉTODOS PARA LA ADMINISTRACIÓN (INCLUYEN INACTIVOS) ---
+
+    /**
+     * Recupera todos los detalles de un producto dado, incluyendo los activos e inactivos.
+     * Usado para la vista de administración.
+     * @param productoId El ID del producto padre.
+     * @return Una lista de ProductoDetalleDTO, sin filtrar por estado 'activo'.
+     * @throws Exception Si ocurre un error al buscar los detalles.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductoDetalleDTO> findAllByProductoIdForAdmin(Long productoId) throws Exception {
+        try {
+            // Este método usa el nuevo método del repositorio que NO filtra por 'activo'
+            List<ProductoDetalle> entities = productoDetalleRepository.findAllByProductoId(productoId);
+            return entities.stream()
+                    .map(ProductoDetalleDTO::new)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new Exception("Error al buscar ProductoDetalles (ADMIN) por ID de Producto: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Realiza un "soft delete" (desactiva) un ProductoDetalle.
+     * @param id El ID del ProductoDetalle a desactivar.
+     * @return El ProductoDetalleDTO actualizado.
+     * @throws Exception Si el detalle no se encuentra o hay un error.
+     */
+    @Transactional
+    public ProductoDetalleDTO deactivate(Long id) throws Exception {
+        Optional<ProductoDetalle> detalleOptional = productoDetalleRepository.findById(id); // Usa findById sin AndActivoTrue
+        if (detalleOptional.isEmpty()) {
+            throw new EntityNotFoundException("ProductoDetalle no encontrado para desactivar con ID: " + id);
+        }
+        ProductoDetalle detalle = detalleOptional.get();
+        detalle.setActivo(false); // Marca como inactivo
+        productoDetalleRepository.save(detalle); // Guarda el cambio
+        return new ProductoDetalleDTO(detalle); // Devuelve el DTO actualizado
+    }
+
+    /**
+     * Activa un ProductoDetalle previamente desactivado.
+     * @param id El ID del ProductoDetalle a activar.
+     * @return El ProductoDetalleDTO actualizado.
+     * @throws Exception Si el detalle no se encuentra o hay un error.
+     */
+    @Transactional
+    public ProductoDetalleDTO activate(Long id) throws Exception {
+        Optional<ProductoDetalle> detalleOptional = productoDetalleRepository.findById(id); // Usa findById sin AndActivoTrue
+        if (detalleOptional.isEmpty()) {
+            throw new EntityNotFoundException("ProductoDetalle no encontrado para activar con ID: " + id);
+        }
+        ProductoDetalle detalle = detalleOptional.get();
+        detalle.setActivo(true); // Marca como activo
+        productoDetalleRepository.save(detalle); // Guarda el cambio
+        return new ProductoDetalleDTO(detalle); // Devuelve el DTO actualizado
+    }
+
     // --- Métodos para crear y actualizar usando ProductoDetalleDTO como entrada y salida ---
+    // (Estos métodos ya manejan el campo 'activo' del DTO, asumiendo que el DTO lo incluye)
 
     @Transactional
-    public ProductoDetalle crearDesdeDTO(ProductoDetalleDTO dto) throws Exception { // Recibe ProductoDetalleDTO
+    public ProductoDetalle crearDesdeDTO(ProductoDetalleDTO dto) throws Exception {
         ProductoDetalle newDetalle = new ProductoDetalle();
         newDetalle.setPrecioCompra(dto.getPrecioCompra());
         newDetalle.setStockActual(dto.getStockActual());
         newDetalle.setStockMaximo(dto.getStockMaximo());
-        newDetalle.setActivo(dto.isActivo());
+        newDetalle.setActivo(dto.isActivo()); // Asigna el estado activo recibido en el DTO
 
         // Cargar y asignar Color usando colorId del DTO de entrada
         if (dto.getColorId() != null) {
@@ -182,7 +241,7 @@ public class ProductoDetalleService extends BaseService<ProductoDetalle, Long> {
     }
 
     @Transactional
-    public ProductoDetalle actualizarDesdeDTO(Long id, ProductoDetalleDTO dto) throws Exception { // Recibe ProductoDetalleDTO
+    public ProductoDetalle actualizarDesdeDTO(Long id, ProductoDetalleDTO dto) throws Exception {
         ProductoDetalle existingDetalle = productoDetalleRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("ProductoDetalle no encontrado para actualizar con ID: " + id));
 
@@ -190,7 +249,7 @@ public class ProductoDetalleService extends BaseService<ProductoDetalle, Long> {
         existingDetalle.setPrecioCompra(dto.getPrecioCompra());
         existingDetalle.setStockActual(dto.getStockActual());
         existingDetalle.setStockMaximo(dto.getStockMaximo());
-        existingDetalle.setActivo(dto.isActivo());
+        existingDetalle.setActivo(dto.isActivo()); // Asigna el estado activo recibido en el DTO
 
         // Cargar y asignar Color usando colorId del DTO de entrada
         if (dto.getColorId() != null) {

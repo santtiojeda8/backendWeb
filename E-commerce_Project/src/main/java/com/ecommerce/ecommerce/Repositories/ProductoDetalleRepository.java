@@ -1,8 +1,8 @@
 package com.ecommerce.ecommerce.Repositories;
 
 import com.ecommerce.ecommerce.Entities.ProductoDetalle;
-import com.ecommerce.ecommerce.Entities.Color; // Importar la entidad Color
-import com.ecommerce.ecommerce.Entities.Talle; // Importar la entidad Talle
+import com.ecommerce.ecommerce.Entities.Color;
+import com.ecommerce.ecommerce.Entities.Talle;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,49 +13,41 @@ import java.util.Optional;
 @Repository
 public interface ProductoDetalleRepository extends BaseRepository<ProductoDetalle, Long> {
 
-    // --- Métodos de Spring Data JPA con nombre de método ---
-    // Ahora usando las entidades Color y Talle
+    // --- Métodos para el CLIENTE (solo activos) ---
     List<ProductoDetalle> findAllByProductoIdAndActivoTrue(Long productoId);
-
-    // Por talle y color de un producto, solo si está activo. Retorna Optional por si no se encuentra.
     Optional<ProductoDetalle> findByProductoIdAndTalleAndColorAndActivoTrue(Long productoId, Talle talle, Color color);
-
-    // Stock mayor a cierto mínimo, solo si están activos
     List<ProductoDetalle> findAllByStockActualGreaterThanAndActivoTrue(Integer stockMinimo);
-
-    // Por color específico, solo si están activos
     List<ProductoDetalle> findAllByColorAndActivoTrue(Color color);
-
-    // Por talle específico, solo si están activos
     List<ProductoDetalle> findAllByTalleAndActivoTrue(Talle talle);
-
-    // Por producto y color, solo si están activos
     List<ProductoDetalle> findAllByProductoIdAndColorAndActivoTrue(Long productoId, Color color);
-
-    // Por producto y talle, solo si están activos
     List<ProductoDetalle> findAllByProductoIdAndTalleAndActivoTrue(Long productoId, Talle talle);
-
-    // Stock entre un rango, solo si están activos
     List<ProductoDetalle> findAllByStockActualBetweenAndActivoTrue(Integer stockMin, Integer stockMax);
 
-    // --- Métodos con @Query ---
-    // Las consultas se ajustan para referenciar las propiedades de las entidades Color y Talle
+    // --- NUEVO MÉTODO para la ADMINISTRACIÓN (trae activos e inactivos) ---
+    List<ProductoDetalle> findAllByProductoId(Long productoId); // No filtra por 'activo'
+
+    // --- Métodos con @Query (Asegurarse de su uso: ¿cliente o admin?) ---
+    // Si estos son para el cliente, entonces mantienen `pd.activo = true`
     @Query("SELECT pd FROM ProductoDetalle pd " +
-            "WHERE pd.activo = true " +
+            "WHERE pd.activo = true " + // Mantener si es para cliente
             "AND pd.producto.id = :productoId " +
-            "AND (:colorNombre IS NULL OR pd.color.nombreColor = :colorNombre) " + // Ahora compara por nombreColor
-            "AND (:talleNombre IS NULL OR pd.talle.nombreTalle = :talleNombre) " + // Ahora compara por nombreTalle
+            "AND (:colorNombre IS NULL OR pd.color.nombreColor = :colorNombre) " +
+            "AND (:talleNombre IS NULL OR pd.talle.nombreTalle = :talleNombre) " +
             "AND pd.stockActual >= :stockMin")
     List<ProductoDetalle> filtrarPorOpciones(
             @Param("productoId") Long productoId,
-            @Param("colorNombre") String colorNombre, // Parámetro como String
-            @Param("talleNombre") String talleNombre, // Parámetro como String
+            @Param("colorNombre") String colorNombre,
+            @Param("talleNombre") String talleNombre,
             @Param("stockMin") Integer stockMin
     );
 
-    @Query("SELECT DISTINCT pd.talle.nombreTalle FROM ProductoDetalle pd WHERE pd.activo = true AND pd.producto.id = :productoId") // Selecciona el nombre del talle
-    List<String> obtenerNombresTallesDisponibles(@Param("productoId") Long productoId); // Retorna List<String>
+    @Query("SELECT DISTINCT pd.talle.nombreTalle FROM ProductoDetalle pd WHERE pd.activo = true AND pd.producto.id = :productoId")
+    List<String> obtenerNombresTallesDisponibles(@Param("productoId") Long productoId);
 
-    @Query("SELECT DISTINCT pd.color.nombreColor FROM ProductoDetalle pd WHERE pd.activo = true AND pd.producto.id = :productoId") // Selecciona el nombre del color
-    List<String> obtenerNombresColoresDisponibles(@Param("productoId") Long productoId); // Retorna List<String>
+    @Query("SELECT DISTINCT pd.color.nombreColor FROM ProductoDetalle pd WHERE pd.activo = true AND pd.producto.id = :productoId")
+    List<String> obtenerNombresColoresDisponibles(@Param("productoId") Long productoId);
+
+    // Si tu servicio ProductoDetalleService tiene un findByIdAndActivoTrue (como lo vimos antes)
+    // entonces este método también es necesario en el repo base o aquí.
+    // BaseRepository ya lo tiene, así que no necesitas redeclararlo aquí.
 }

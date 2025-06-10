@@ -5,10 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="8a0af119-c1d2-48ff-a2d4-3e57944b3cc8" name="Changes" comment="&quot;Cambios para el front&quot;">
-      <change afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/UserInfoDTO.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/OrdenCompraDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/OrdenCompraDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/BaseController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/BaseController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/DescuentoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/DescuentoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/OrdenCompraController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/OrdenCompraController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/OrdenCompraDetalleController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/OrdenCompraDetalleController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoDetalleController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/ProductoDetalleController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/TalleController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Controllers/TalleController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoDetalle.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoDetalle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoSpecification.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoSpecification.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoDetalleRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Repositories/ProductoDetalleRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/BaseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/BaseService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/DescuentosService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/DescuentosService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoDetalleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoDetalleService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/ProductoService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/TalleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/TalleService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -94,26 +106,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.EcommerceApplication.executor": "Run",
-    "Application.Unnamed.executor": "Run",
-    "Gradle.Build E-commerce_Project.executor": "Run",
-    "Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle.executor": "Run",
-    "Gradle.Download Sources.executor": "Run",
-    "Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor": "Run",
-    "Gradle.E-commerce_Project.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "#2 on RamaSeba",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "E:/Programacion Tareas/Prog/Metolodogia/Gonzales/bACK2/backendWeb",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.0"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.EcommerceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Unnamed.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Build E-commerce_Project.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.Download Sources.executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.E-commerce_Project.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;#2 on RamaSeba&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/Programacion Tareas/Prog/Metolodogia/Gonzales/bACK2/backendWeb&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Application.Unnamed">
     <configuration name="Unnamed" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="20" />
@@ -236,7 +248,15 @@
       <option name="project" value="LOCAL" />
       <updated>1749440886188</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="&quot;Cambios para el front&quot;">
+      <option name="closed" value="true" />
+      <created>1749445027917</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1749445027917</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

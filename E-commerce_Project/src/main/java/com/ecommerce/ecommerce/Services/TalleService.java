@@ -1,4 +1,5 @@
 package com.ecommerce.ecommerce.Services;
+
 import com.ecommerce.ecommerce.Entities.Talle;
 import com.ecommerce.ecommerce.Repositories.TalleRepository;
 import org.springframework.stereotype.Service;
@@ -31,5 +32,13 @@ public class TalleService extends BaseService<Talle, Long> {
         }
     }
 
-
+    // --- NUEVO MÉTODO para obtener TODOS los talles (activos e inactivos) para el ADMIN ---
+    @Transactional(readOnly = true)
+    public List<Talle> getAllTallesAdmin() throws Exception {
+        try {
+            return super.findAll(); // Llama al nuevo método findAll() del BaseService
+        } catch (Exception e) {
+            throw new Exception("Error al listar todos los talles para administrador: " + e.getMessage());
+        }
+    }
 }
