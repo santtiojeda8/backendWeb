@@ -1,169 +1,391 @@
 package com.ecommerce.ecommerce.Services;
 
-import com.ecommerce.ecommerce.Entities.Categoria;
-import com.ecommerce.ecommerce.Entities.Descuento;
-import com.ecommerce.ecommerce.Entities.Producto;
-import com.ecommerce.ecommerce.Entities.ProductoSpecification;
+import com.ecommerce.ecommerce.Entities.*;
 import com.ecommerce.ecommerce.Entities.enums.Sexo;
-import com.ecommerce.ecommerce.Repositories.BaseRepository;
-import com.ecommerce.ecommerce.Repositories.ProductoRepository;
-
-import org.springframework.transaction.annotation.Transactional;
-
+import com.ecommerce.ecommerce.Repositories.*;
+import com.ecommerce.ecommerce.dto.CategoriaDTO;
+import com.ecommerce.ecommerce.dto.ColorDTO;
+import com.ecommerce.ecommerce.dto.DescuentoDTO;
+import com.ecommerce.ecommerce.dto.ImagenDTO;
+import com.ecommerce.ecommerce.dto.ProductoDTO;
+import com.ecommerce.ecommerce.dto.ProductoDetalleDTO;
+import com.ecommerce.ecommerce.dto.ProductoRequestDTO;
+import com.ecommerce.ecommerce.dto.ProductoDetalleRequestDTO;
+import com.ecommerce.ecommerce.dto.TalleDTO;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-// Importar los DTOs necesarios
-import com.ecommerce.ecommerce.dto.ProductoDTO;
-import com.ecommerce.ecommerce.dto.ProductoDetalleDTO;
-import com.ecommerce.ecommerce.dto.ImagenDTO;
-import com.ecommerce.ecommerce.dto.CategoriaDTO;
-
-// Importar Entidades necesarias para el mapeo
-import com.ecommerce.ecommerce.Entities.ProductoDetalle;
-import com.ecommerce.ecommerce.Entities.Imagen;
-
 
 @Service
 public class ProductoService extends BaseService<Producto, Long> {
 
-    private final ProductoRepository productoRepository;
+    private ProductoRepository productoRepository;
+    private CategoriaRepository categoriaRepository;
+    private ImagenRepository imagenRepository; // This can often be removed if using full cascading
+    private ProductoDetalleRepository productoDetalleRepository;
+    private ColorRepository colorRepository;
+    private TalleRepository talleRepository;
+    private DescuentosRepository descuentoRepository;
+    private CloudinaryService cloudinaryService;
 
-    // Constructor
-    public ProductoService(ProductoRepository productoRepository, BaseRepository<Producto, Long> baseRepository) {
-        super(baseRepository);
+    @Autowired
+    public ProductoService(ProductoRepository productoRepository,
+                           CategoriaRepository categoriaRepository,
+                           ImagenRepository imagenRepository,
+                           ProductoDetalleRepository productoDetalleRepository,
+                           ColorRepository colorRepository,
+                           TalleRepository talleRepository,
+                           DescuentosRepository descuentoRepository,
+                           CloudinaryService cloudinaryService) {
+        super(productoRepository);
         this.productoRepository = productoRepository;
+        this.categoriaRepository = categoriaRepository;
+        this.imagenRepository = imagenRepository;
+        this.productoDetalleRepository = productoDetalleRepository;
+        this.colorRepository = colorRepository;
+        this.talleRepository = talleRepository;
+        this.descuentoRepository = descuentoRepository;
+        this.cloudinaryService = cloudinaryService;
     }
 
-    // --- Métodos de búsqueda y obtención de listas de DTOs ---
-
+    @Override
     @Transactional(readOnly = true)
-    public List<Producto> findProductosConPromocion() throws Exception  {
-        try{
-            Specification<Producto> spec = ProductoSpecification.byTienePromocion(true);
-            return productoRepository.findAll(spec);
-        }catch (Exception e){
-            System.err.println("Error en findProductosConPromocion: " + e.getMessage()); e.printStackTrace();
-            throw new Exception("Error al buscar productos con promoción: " + e.getMessage());
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public List<Producto> buscarPorNombre(String keyword)  throws Exception {
-        try{
-            Specification<Producto> spec = ProductoSpecification.byDenominacionLike(keyword);
-            return productoRepository.findAll(spec);
-        }catch (Exception e){
-            System.err.println("Error en buscarPorNombre: " + e.getMessage()); e.printStackTrace();
-            throw new Exception("Error al buscar productos por nombre: " + e.getMessage());
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public List<ProductoDTO> obtenerTodosLosProductosDTO() throws Exception {
+    public List<Producto> listar() throws Exception {
         try {
-            List<Producto> todosLosProductos = productoRepository.findAll();
-            return todosLosProductos.stream()
+            List<Producto> productos = productoRepository.findAllByActivoTrueWithDescuento();
+            productos.forEach(Producto::calcularPrecioFinal);
+            return productos;
+        } catch (Exception e) {
+            throw new Exception("Error al listar productos con descuento: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Producto buscarPorId(Long id) throws Exception {
+        try {
+            Optional<Producto> productoOptional = productoRepository.findByIdAndActivoTrueWithDescuento(id);
+            if (productoOptional.isEmpty()) {
+                throw new EntityNotFoundException("Producto con ID " + id + " no encontrado o inactivo.");
+            }
+            Producto producto = productoOptional.get();
+            producto.calcularPrecioFinal();
+            return producto;
+        } catch (Exception e) {
+            throw new Exception("Error al buscar producto por ID con descuento: " + e.getMessage());
+        }
+    }
+
+    // --- NUEVOS MÉTODOS PARA ADMINISTRACIÓN (TODOS LOS PRODUCTOS, ACTIVOS E INACTIVOS) ---
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> obtenerTodosLosProductosParaAdmin() throws Exception {
+        try {
+            // Llama al método findAll() de BaseService que no filtra por activo
+            List<Producto> productos = super.findAll();
+            productos.forEach(Producto::calcularPrecioFinal); // Asegurarse de calcular el precio final
+            return productos.stream()
                     .map(this::mapearProductoADTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            System.err.println("Error en obtenerTodosLosProductosDTO: " + e.getMessage());
-            e.printStackTrace();
-            throw new Exception("Error al obtener todos los productos DTO: " + e.getMessage());
+            throw new Exception("Error al obtener todos los productos para administración: " + e.getMessage());
         }
+    }
+
+    @Transactional(readOnly = true)
+    public ProductoDTO obtenerProductoDTOPorIdIncluyendoInactivos(Long id) throws Exception {
+        try {
+            // Llama al método buscarPorIdIncluyendoInactivos() de BaseService
+            Producto producto = super.buscarPorIdIncluyendoInactivos(id);
+            producto.calcularPrecioFinal(); // Asegurarse de calcular el precio final
+            return mapearProductoADTO(producto);
+        } catch (Exception e) {
+            throw new Exception("Error al obtener producto por ID (para administración, incluyendo inactivos): " + e.getMessage());
+        }
+    }
+    // --- FIN NUEVOS MÉTODOS PARA ADMINISTRACIÓN ---
+
+
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> obtenerTodosLosProductosDTO() throws Exception {
+        List<Producto> productos = listar(); // Este ya usa findAllByActivoTrueWithDescuento
+        return productos.stream()
+                .map(this::mapearProductoADTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ProductoDTO obtenerProductoDTOPorId(Long id) throws Exception {
+        Producto producto = buscarPorId(id); // Este ya usa findByIdAndActivoTrueWithDescuento
+        return mapearProductoADTO(producto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> buscarProductosPorDenominacion(String denominacion) throws Exception {
+        try {
+            List<Producto> productos = productoRepository.findByDenominacionContainingAndActivoTrueWithDescuento(denominacion);
+            productos.forEach(Producto::calcularPrecioFinal);
+            return productos.stream()
+                    .map(this::mapearProductoADTO)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            throw new Exception("Error al buscar productos por denominación con descuento: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public ProductoDTO crearProducto(ProductoRequestDTO productoRequestDTO, List<MultipartFile> newImageFiles) throws Exception {
+        Producto producto = new Producto();
+        actualizarProductoDesdeDTO(producto, productoRequestDTO);
+
+        if (productoRequestDTO.isTienePromocion() && productoRequestDTO.getDescuento() != null && productoRequestDTO.getDescuento().getId() != null) {
+            Descuento descuento = descuentoRepository.findById(productoRequestDTO.getDescuento().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Descuento con ID " + productoRequestDTO.getDescuento().getId() + " no encontrado."));
+            producto.setDescuento(descuento);
+            producto.setTienePromocion(true);
+        } else {
+            producto.setDescuento(null);
+            producto.setTienePromocion(false);
+        }
+
+        producto = productoRepository.save(producto);
+
+        if (newImageFiles != null && !newImageFiles.isEmpty()) {
+            for (MultipartFile file : newImageFiles) {
+                Map<?, ?> uploadResult = cloudinaryService.uploadImage(file);
+                String imageUrl = uploadResult.get("url").toString();
+
+                Imagen nuevaImagen = new Imagen();
+                nuevaImagen.setUrl(imageUrl);
+                nuevaImagen.setProducto(producto);
+                nuevaImagen.setActivo(true);
+                producto.getImagenes().add(nuevaImagen);
+            }
+        }
+
+        if (productoRequestDTO.getProductos_detalles() != null) {
+            for (ProductoDetalleRequestDTO detalleRequest : productoRequestDTO.getProductos_detalles()) {
+                ProductoDetalle detalle = new ProductoDetalle();
+                detalle.setProducto(producto);
+                detalle.setPrecioCompra(detalleRequest.getPrecioCompra());
+                detalle.setStockActual(detalleRequest.getStockActual());
+                detalle.setStockMaximo(detalleRequest.getStockMaximo());
+                detalle.setActivo(detalleRequest.isActivo());
+
+                detalle.setColor(colorRepository.findById(detalleRequest.getColorId())
+                        .orElseThrow(() -> new EntityNotFoundException("Color con ID " + detalleRequest.getColorId() + " no encontrado.")));
+                detalle.setTalle(talleRepository.findById(detalleRequest.getTalleId())
+                        .orElseThrow(() -> new EntityNotFoundException("Talle con ID " + detalleRequest.getTalleId() + " no encontrado.")));
+
+                productoDetalleRepository.save(detalle);
+                producto.getProductos_detalles().add(detalle);
+            }
+        }
+
+        producto.calcularPrecioFinal();
+        return mapearProductoADTO(productoRepository.save(producto));
+    }
+
+
+    @Transactional
+    public ProductoDTO actualizarProducto(Long id, ProductoRequestDTO productoRequestDTO, List<MultipartFile> newImageFiles) throws Exception {
+        // *** CAMBIO REALIZADO AQUÍ: Ahora busca el producto incluso si está inactivo ***
+        Producto productoExistente = super.buscarPorIdIncluyendoInactivos(id);
+        // El resto de la lógica de actualización permanece igual.
+        actualizarProductoDesdeDTO(productoExistente, productoRequestDTO);
+
+        // Lógica para actualizar el descuento
+        if (productoRequestDTO.isTienePromocion() && productoRequestDTO.getDescuento() != null && productoRequestDTO.getDescuento().getId() != null) {
+            Descuento descuento = descuentoRepository.findById(productoRequestDTO.getDescuento().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Descuento con ID " + productoRequestDTO.getDescuento().getId() + " no encontrado."));
+            productoExistente.setDescuento(descuento);
+            productoExistente.setTienePromocion(true);
+        } else {
+            productoExistente.setDescuento(null);
+            productoExistente.setTienePromocion(false);
+        }
+
+        // --- INICIO: Lógica OPTIMIZADA para la GESTIÓN de IMÁGENES ---
+        Set<Imagen> imagesToPersist = new HashSet<>();
+
+        // 1. Procesar imágenes que vienen en el DTO (existentes y potencialmente actualizadas)
+        if (productoRequestDTO.getImagenes() != null) {
+            for (ImagenDTO imagenDTO : productoRequestDTO.getImagenes()) {
+                if (imagenDTO.getId() != null) {
+                    // Es una imagen existente: búscala y actualiza sus propiedades
+                    Imagen existingImage = productoExistente.getImagenes().stream()
+                            .filter(img -> img.getId() != null && img.getId().equals(imagenDTO.getId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (existingImage != null) {
+                        // Actualiza el campo 'url' y 'activo'.
+                        existingImage.setUrl(imagenDTO.getUrl());
+                        existingImage.setActivo(imagenDTO.isActivo());
+                        imagesToPersist.add(existingImage); // Se añade la imagen existente y actualizada
+                    }
+                } else {
+                    // Es una imagen nueva (ID es null), créala
+                    Imagen newImage = Imagen.builder()
+                            .url(imagenDTO.getUrl())
+                            .activo(imagenDTO.isActivo())
+                            .producto(productoExistente) // Establecer la relación bidireccional
+                            .build();
+                    imagesToPersist.add(newImage); // Se añade la nueva imagen
+                }
+            }
+        }
+
+        // 2. Cargar y añadir nuevas imágenes desde MultipartFile (imágenes recién subidas)
+        if (newImageFiles != null && !newImageFiles.isEmpty()) {
+            Set<String> currentAndNewImageUrls = imagesToPersist.stream().map(Imagen::getUrl).collect(Collectors.toSet());
+
+            for (MultipartFile file : newImageFiles) {
+                Map<?, ?> uploadResult = cloudinaryService.uploadImage(file);
+                String imageUrl = uploadResult.get("url").toString();
+
+                if (!currentAndNewImageUrls.contains(imageUrl)) {
+                    Imagen newImage = Imagen.builder()
+                            .url(imageUrl)
+                            .activo(true)
+                            .producto(productoExistente)
+                            .build();
+                    imagesToPersist.add(newImage);
+                    currentAndNewImageUrls.add(imageUrl);
+                }
+            }
+        }
+
+        // 3. Reemplazar la colección de imágenes del producto existente.
+        productoExistente.getImagenes().clear();
+        productoExistente.getImagenes().addAll(imagesToPersist);
+        productoExistente.getImagenes().forEach(img -> img.setProducto(productoExistente));
+        // --- FIN: Lógica OPTIMIZADA para la GESTIÓN de IMÁGENES ---
+
+
+        // --- Lógica para la GESTIÓN de PRODUCTOS_DETALLES (AJUSTADA para Soft Delete) ---
+        if (productoRequestDTO.getProductos_detalles() != null) {
+            Map<Long, ProductoDetalle> existingDetailsMap = productoExistente.getProductos_detalles().stream()
+                    .filter(d -> d.getId() != null)
+                    .collect(Collectors.toMap(ProductoDetalle::getId, d -> d));
+
+            Set<Long> requestDetailIds = productoRequestDTO.getProductos_detalles().stream()
+                    .map(ProductoDetalleRequestDTO::getId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+
+            for (ProductoDetalleRequestDTO detalleRequest : productoRequestDTO.getProductos_detalles()) {
+                ProductoDetalle detalle;
+                if (detalleRequest.getId() != null && existingDetailsMap.containsKey(detalleRequest.getId())) {
+                    detalle = existingDetailsMap.get(detalleRequest.getId());
+                    detalle.setPrecioCompra(detalleRequest.getPrecioCompra());
+                    detalle.setStockActual(detalleRequest.getStockActual());
+                    detalle.setStockMaximo(detalleRequest.getStockMaximo());
+                    detalle.setActivo(detalleRequest.isActivo());
+
+                    Color color = colorRepository.findById(detalleRequest.getColorId())
+                            .orElseThrow(() -> new EntityNotFoundException("Color con ID " + detalleRequest.getColorId() + " no encontrado."));
+                    Talle talle = talleRepository.findById(detalleRequest.getTalleId())
+                            .orElseThrow(() -> new EntityNotFoundException("Talle con ID " + detalleRequest.getTalleId() + " no encontrado."));
+                    detalle.setColor(color);
+                    detalle.setTalle(talle);
+
+                } else {
+                    detalle = new ProductoDetalle();
+                    detalle.setProducto(productoExistente);
+                    detalle.setPrecioCompra(detalleRequest.getPrecioCompra());
+                    detalle.setStockActual(detalleRequest.getStockActual());
+                    detalle.setStockMaximo(detalleRequest.getStockMaximo());
+                    detalle.setActivo(detalleRequest.isActivo());
+
+                    Color color = colorRepository.findById(detalleRequest.getColorId())
+                            .orElseThrow(() -> new EntityNotFoundException("Color con ID " + detalleRequest.getColorId() + " no encontrado."));
+                    Talle talle = talleRepository.findById(detalleRequest.getTalleId())
+                            .orElseThrow(() -> new EntityNotFoundException("Talle con ID " + detalleRequest.getTalleId() + " no encontrado."));
+                    detalle.setColor(color);
+                    detalle.setTalle(talle);
+
+                    productoExistente.getProductos_detalles().add(detalle);
+                }
+                productoDetalleRepository.save(detalle);
+            }
+
+            new ArrayList<>(productoExistente.getProductos_detalles()).forEach(existingDetail -> {
+                if (existingDetail.getId() != null && !requestDetailIds.contains(existingDetail.getId())) {
+                    if (existingDetail.isActivo()) {
+                        existingDetail.setActivo(false);
+                        productoDetalleRepository.save(existingDetail);
+                    }
+                }
+            });
+
+        } else {
+            productoExistente.getProductos_detalles().forEach(d -> {
+                if (d.isActivo()) {
+                    d.setActivo(false);
+                    productoDetalleRepository.save(d);
+                }
+            });
+        }
+
+        productoExistente.calcularPrecioFinal();
+        return mapearProductoADTO(productoRepository.save(productoExistente));
     }
 
     @Transactional(readOnly = true)
     public List<ProductoDTO> obtenerProductosPromocionalesDTO() throws Exception {
         try {
-            Specification<Producto> spec = ProductoSpecification.byTienePromocion(true);
-            List<Producto> productosPromocionales = productoRepository.findAll(spec);
-            return productosPromocionales.stream()
+            List<Producto> productos = productoRepository.findByTienePromocionTrueAndActivoTrueWithDescuento();
+            productos.forEach(Producto::calcularPrecioFinal);
+            return productos.stream()
                     .map(this::mapearProductoADTO)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            System.err.println("Error en obtenerProductosPromocionalesDTO: " + e.getMessage());
-            e.printStackTrace();
             throw new Exception("Error al obtener productos promocionales DTO: " + e.getMessage());
         }
     }
 
     @Transactional(readOnly = true)
-    public ProductoDTO obtenerProductoDTOPorId(Long id) throws Exception {
-        try {
-            Producto producto = productoRepository.findById(id)
-                    .orElseThrow(() -> new Exception("Producto no encontrado con ID: " + id));
-            return mapearProductoADTO(producto);
-        } catch (Exception e) {
-            System.err.println("Error en obtenerProductoDTOPorId: " + e.getMessage());
-            e.printStackTrace();
-            throw new Exception("Error al obtener Producto DTO por ID: " + e.getMessage());
-        }
+    public List<ProductoDTO> buscarPorNombre(String keyword) throws Exception {
+        return buscarProductosPorDenominacion(keyword);
     }
 
-    // --- Método para obtener la lista de categorías disponibles (como Strings) ---
     @Transactional(readOnly = true)
     public List<String> getAllAvailableCategories() throws Exception {
         try {
-            List<Producto> allProducts = productoRepository.findAll();
-
-            Set<String> uniqueCategories = new HashSet<>();
-
-            for (Producto producto : allProducts) {
-                if (producto.getCategorias() != null) {
-                    for (Categoria categoria : producto.getCategorias()) {
-                        if (categoria.getDenominacion() != null) {
-                            uniqueCategories.add(categoria.getDenominacion());
-                        }
-                    }
-                }
-            }
-
-            return uniqueCategories.stream()
-                    .sorted()
+            return categoriaRepository.findAll().stream()
+                    .map(Categoria::getDenominacion)
+                    .distinct()
                     .collect(Collectors.toList());
-
         } catch (Exception e) {
-            System.err.println("Error al obtener categorías disponibles: " + e.getMessage());
-            e.printStackTrace();
             throw new Exception("Error al obtener categorías disponibles: " + e.getMessage());
         }
     }
 
-    // --- Método para obtener listas de colores y talles disponibles (como Strings) ---
     @Transactional(readOnly = true)
     public List<String> getAllAvailableColors() throws Exception {
         try {
-            List<Producto> todosLosProductos = productoRepository.findAll();
-
-            Set<String> uniqueColors = new HashSet<>();
-
-            for (Producto producto : todosLosProductos) {
-                if (producto.getProductos_detalles() != null) {
-                    for (ProductoDetalle detalle : producto.getProductos_detalles()) {
-                        if (detalle.getColor() != null) {
-                            uniqueColors.add(detalle.getColor().toString());
-                        }
-                    }
-                }
-            }
-
-            return uniqueColors.stream()
-                    .sorted()
+            return colorRepository.findAll().stream()
+                    .map(c -> c.getNombreColor())
+                    .distinct()
                     .collect(Collectors.toList());
-
         } catch (Exception e) {
-            System.err.println("Error al obtener colores disponibles: " + e.getMessage());
-            e.printStackTrace();
             throw new Exception("Error al obtener colores disponibles: " + e.getMessage());
         }
     }
@@ -171,203 +393,194 @@ public class ProductoService extends BaseService<Producto, Long> {
     @Transactional(readOnly = true)
     public List<String> getAllAvailableTalles() throws Exception {
         try {
-            List<Producto> todosLosProductos = productoRepository.findAll();
-
-            Set<String> uniqueTalles = new HashSet<>();
-
-            for (Producto producto : todosLosProductos) {
-                if (producto.getProductos_detalles() != null) {
-                    for (ProductoDetalle detalle : producto.getProductos_detalles()) {
-                        if (detalle.getTalle() != null) {
-                            uniqueTalles.add(detalle.getTalle().toString());
-                        }
-                    }
-                }
-            }
-
-            return uniqueTalles.stream()
-                    .sorted()
+            return talleRepository.findAll().stream()
+                    .map(t -> t.getNombreTalle())
+                    .distinct()
                     .collect(Collectors.toList());
-
         } catch (Exception e) {
-            System.err.println("Error al obtener talles disponibles: " + e.getMessage());
-            e.printStackTrace();
             throw new Exception("Error al obtener talles disponibles: " + e.getMessage());
         }
     }
 
-    // --- Método para filtrar y ordenar productos (devuelve DTOs) ---
     @Transactional(readOnly = true)
     public List<ProductoDTO> filtrarYOrdenarProductos(
-            String denominacion,
-            List<String> categorias,
-            Sexo sexo,
-            Boolean tienePromocion,
-            Double precioMin,
-            Double precioMax,
-            List<String> colores,
-            List<String> talles,
-            Integer stockMinimo,
-            String sortBy,
-            String sortDir
-    ) throws Exception {
+            String denominacion, List<String> categorias, Sexo sexo, Boolean tienePromocion,
+            BigDecimal minPrice, BigDecimal maxPrice, List<String> colores, List<String> talles,
+            Integer stockMinimo, String orderBy, String orderDirection) throws Exception {
         try {
-            Specification<Producto> combinedSpec = ProductoSpecification.withFilters(
-                    denominacion,
-                    categorias,
-                    sexo,
-                    tienePromocion,
-                    precioMin,
-                    precioMax,
-                    colores,
-                    talles,
-                    stockMinimo
-            );
+            Specification<Producto> finalSpec = com.ecommerce.ecommerce.Specifications.ProductoSpecification.withFilters(
+                    denominacion, categorias, sexo, tienePromocion, minPrice, maxPrice, colores, talles, stockMinimo
+            ).and(com.ecommerce.ecommerce.Specifications.ProductoSpecification.byActivo(true));
 
             Sort sort = Sort.unsorted();
-            if (sortBy != null && !sortBy.trim().isEmpty()) {
-                Sort.Direction direction = Sort.Direction.ASC;
-                if (sortDir != null && sortDir.equalsIgnoreCase("desc")) {
-                    direction = Sort.Direction.DESC;
+            if (orderBy != null && !orderBy.isEmpty()) {
+                Sort.Direction direction = "desc".equalsIgnoreCase(orderDirection) ? Sort.Direction.DESC : Sort.Direction.ASC;
+                if ("precioVenta".equalsIgnoreCase(orderBy)) {
+                    sort = Sort.by(direction, "precioVenta");
+                } else if ("denominacion".equalsIgnoreCase(orderBy)) {
+                    sort = Sort.by(direction, "denominacion");
                 }
-                String actualSortBy = sortBy.trim();
-                try {
-                    sort = Sort.by(direction, actualSortBy);
-                } catch (IllegalArgumentException e) {
-                    System.err.println("Advertencia: Campo de ordenamiento '" + actualSortBy + "' no válido. Usando ordenamiento por defecto.");
-                    sort = Sort.unsorted();
-                }
-
             }
 
-            List<Producto> productosFiltradosYOrdenados = productoRepository.findAll(combinedSpec, sort);
-
-            return productosFiltradosYOrdenados.stream()
+            List<Producto> productos = productoRepository.findAll(finalSpec, sort);
+            productos.forEach(Producto::calcularPrecioFinal);
+            return productos.stream()
                     .map(this::mapearProductoADTO)
                     .collect(Collectors.toList());
-
         } catch (Exception e) {
             System.err.println("Error al filtrar y ordenar productos: " + e.getMessage());
             e.printStackTrace();
-            throw new Exception("Error al filtrar y ordenar productos: " + e.getMessage());
+            throw new Exception("Error al filtrar y ordenar productos: " + e.getMessage(), e);
         }
     }
 
+    @Transactional
+    public ProductoDTO activarProducto(Long id) throws Exception {
+        try {
+            // Este método ya utiliza findById (sin filtro por activo) y luego lo activa. Es correcto.
+            Optional<Producto> productoOptional = productoRepository.findById(id);
+            if (productoOptional.isEmpty()) {
+                throw new EntityNotFoundException("Producto con ID " + id + " no encontrado para activar.");
+            }
+            Producto producto = productoOptional.get();
+            producto.setActivo(true);
+            return mapearProductoADTO(productoRepository.save(producto));
+        } catch (Exception e) {
+            throw new Exception("Error al activar producto por ID: " + e.getMessage());
+        }
+    }
 
-    // --- Métodos de mapeo y cálculo de precio (los que ya tenías) ---
+    @Transactional
+    public void eliminarProductoPorId(Long id) throws Exception {
+        try {
+            // Este método ya utiliza findById (sin filtro por activo) y luego lo desactiva. Es correcto.
+            Optional<Producto> productoOptional = productoRepository.findById(id);
+            if (productoOptional.isEmpty()) {
+                throw new EntityNotFoundException("Producto con ID " + id + " no encontrado para desactivar.");
+            }
+            Producto producto = productoOptional.get();
+            producto.setActivo(false);
+            productoRepository.save(producto);
+        } catch (Exception e) {
+            throw new Exception("Error al desactivar producto por ID: " + e.getMessage());
+        }
+    }
 
-    private ProductoDTO mapearProductoADTO(Producto producto) {
+    private void actualizarProductoDesdeDTO(Producto producto, ProductoRequestDTO dto) {
+        producto.setDenominacion(dto.getDenominacion());
+        producto.setPrecioVenta(dto.getPrecioOriginal());
+        producto.setSexo(dto.getSexo());
+        producto.setActivo(dto.isActivo());
+
+        if (dto.getCategoriaIds() != null && !dto.getCategoriaIds().isEmpty()) {
+            List<Categoria> categoriasList = categoriaRepository.findAllById(dto.getCategoriaIds());
+            if (categoriasList.size() != dto.getCategoriaIds().size()) {
+                throw new EntityNotFoundException("Una o más categorías no fueron encontradas.");
+            }
+            producto.setCategorias(new HashSet<>(categoriasList));
+        } else {
+            producto.setCategorias(Collections.emptySet());
+        }
+    }
+
+    public ProductoDTO mapearProductoADTO(Producto producto) {
         if (producto == null) {
             return null;
         }
 
         ProductoDTO productoDTO = new ProductoDTO();
-
         productoDTO.setId(producto.getId());
         productoDTO.setDenominacion(producto.getDenominacion());
-
         productoDTO.setPrecioOriginal(producto.getPrecioVenta());
-
-        Double precioFinal = calcularPrecioFinal(producto);
-        productoDTO.setPrecioFinal(precioFinal);
-
+        productoDTO.setPrecioFinal(producto.getPrecioFinal());
         productoDTO.setTienePromocion(producto.isTienePromocion());
-
         productoDTO.setSexo(producto.getSexo());
+        productoDTO.setActivo(producto.isActivo());
 
-        // Mapear Categorias (de Entidad a DTO)
-        List<CategoriaDTO> categoriasDTO = new ArrayList<>();
-        if (producto.getCategorias() != null) {
-            for (Categoria categoriaEntity : producto.getCategorias()) {
-                categoriasDTO.add(mapearCategoriaADTO(categoriaEntity));
-            }
+        productoDTO.setCategorias(producto.getCategorias() != null ?
+                producto.getCategorias().stream()
+                        .map(this::mapearCategoriaADTO)
+                        .collect(Collectors.toList()) :
+                Collections.emptyList());
+
+        productoDTO.setImagenes(producto.getImagenes() != null ?
+                producto.getImagenes().stream()
+                        .filter(Imagen::isActivo) // Mantener este filtro si en el admin solo se ven imágenes activas
+                        .map(imagenEntity -> new ImagenDTO(imagenEntity.getId(), imagenEntity.getUrl(), imagenEntity.isActivo()))
+                        .collect(Collectors.toList()) :
+                Collections.emptyList());
+
+        productoDTO.setProductos_detalles(producto.getProductos_detalles() != null ?
+                producto.getProductos_detalles().stream()
+                        .filter(ProductoDetalle::isActivo) // Mantener este filtro si en el admin solo se ven detalles activos
+                        .map(this::mapearProductoDetalleADTO)
+                        .collect(Collectors.toList()) :
+                Collections.emptyList());
+
+        if (producto.getDescuento() != null) {
+            productoDTO.setDescuento(mapearDescuentoADTO(producto.getDescuento()));
+        } else {
+            productoDTO.setDescuento(null);
         }
-        productoDTO.setCategorias(categoriasDTO);
-
-        // Mapear Imagenes (de Entidad a DTO)
-        List<ImagenDTO> imagenesDTO = new ArrayList<>();
-        if (producto.getImagenes() != null) {
-            for (Imagen imagenEntity : producto.getImagenes()) {
-                imagenesDTO.add(new ImagenDTO(imagenEntity.getId(), imagenEntity.getDenominacion()));
-            }
-        }
-        productoDTO.setImagenes(imagenesDTO);
-
-
-        // Mapear Detalles de Producto (de Entidad a DTO)
-        List<ProductoDetalleDTO> productosDetallesDTO = new ArrayList<>();
-        if (producto.getProductos_detalles() != null) {
-            for (ProductoDetalle detalleEntity : producto.getProductos_detalles()) {
-                productosDetallesDTO.add(new ProductoDetalleDTO(
-                        detalleEntity.getId(),
-                        detalleEntity.getPrecioCompra(),
-                        detalleEntity.getStockActual(),
-                        detalleEntity.getCantidad(),
-                        detalleEntity.getStockMaximo(),
-                        detalleEntity.getColor() != null ? detalleEntity.getColor().toString() : null,
-                        detalleEntity.getTalle() != null ? detalleEntity.getTalle().toString() : null
-                ));
-            }
-        }
-        productoDTO.setProductos_detalles(productosDetallesDTO);
-
-
-        System.out.println("--- DEBUG DTO ANTES DE SERIALIZAR ---");
-        System.out.println("Producto ID: " + productoDTO.getId());
-        System.out.println("Denominacion: " + productoDTO.getDenominacion());
-        System.out.println("Precio Original (en DTO): " + productoDTO.getPrecioOriginal());
-        System.out.println("Precio Final (en DTO): " + productoDTO.getPrecioFinal());
-        System.out.println("Tiene Promocion (en DTO): " + productoDTO.isTienePromocion());
-        System.out.println("Categorias Count (en DTO): " + (productoDTO.getCategorias() != null ? productoDTO.getCategorias().size() : 0));
-        System.out.println("Imagenes Count (en DTO): " + (productoDTO.getImagenes() != null ? productoDTO.getImagenes().size() : 0));
-        System.out.println("Productos_Detalles Count (en DTO): " + (productoDTO.getProductos_detalles() != null ? productoDTO.getProductos_detalles().size() : 0));
-        System.out.println("-------------------------------------");
 
         return productoDTO;
     }
 
     private CategoriaDTO mapearCategoriaADTO(Categoria categoriaEntity) {
-        if (categoriaEntity == null) {
-            return null;
-        }
-
-        CategoriaDTO categoriaDTO = new CategoriaDTO(categoriaEntity.getId(), categoriaEntity.getDenominacion());
-
-        if (categoriaEntity.getSubcategorias() != null) {
-            for (Categoria subcategoriaEntity : categoriaEntity.getSubcategorias()) {
-                categoriaDTO.addSubcategoria(mapearCategoriaADTO(subcategoriaEntity));
-            }
-        }
-
+        if (categoriaEntity == null) return null;
+        CategoriaDTO categoriaDTO = new CategoriaDTO();
+        categoriaDTO.setId(categoriaEntity.getId());
+        categoriaDTO.setDenominacion(categoriaEntity.getDenominacion());
         return categoriaDTO;
     }
 
+    private ImagenDTO mapearImagenADTO(Imagen imagenEntity) {
+        if (imagenEntity == null) return null;
+        return new ImagenDTO(imagenEntity.getId(), imagenEntity.getUrl(), imagenEntity.isActivo());
+    }
 
-    private Double calcularPrecioFinal(Producto producto) {
-        Double precioActual = producto.getPrecioVenta();
+    private ProductoDetalleDTO mapearProductoDetalleADTO(ProductoDetalle detalleEntity) {
+        if (detalleEntity == null) return null;
+        ProductoDetalleDTO detalleDTO = new ProductoDetalleDTO();
+        detalleDTO.setId(detalleEntity.getId());
+        detalleDTO.setPrecioCompra(detalleEntity.getPrecioCompra());
+        detalleDTO.setStockActual(detalleEntity.getStockActual());
+        detalleDTO.setStockMaximo(detalleEntity.getStockMaximo());
 
-        if (!producto.isTienePromocion() || producto.getDescuentos() == null || producto.getDescuentos().isEmpty()) {
-            return precioActual;
+        if (detalleEntity.getColor() != null) {
+            detalleDTO.setColor(new ColorDTO(detalleEntity.getColor().getId(), detalleEntity.getColor().getNombreColor(), detalleEntity.getColor().isActivo()));
+        } else {
+            detalleDTO.setColor(null);
         }
 
-        LocalDate hoy = LocalDate.now();
-        LocalTime ahora = LocalTime.now();
-        Double precioConDescuentoMasAlto = precioActual;
-
-        for (Descuento descuento : producto.getDescuentos()) {
-            boolean fechaValida = (descuento.getFechaDesde() == null || !descuento.getFechaDesde().isAfter(hoy)) &&
-                    (descuento.getFechaHasta() == null || !descuento.getFechaHasta().isBefore(hoy));
-            boolean horaValida = (descuento.getHoraDesde() == null || !descuento.getHoraDesde().isAfter(ahora)) &&
-                    (descuento.getHoraHasta() == null || !descuento.getHoraHasta().isBefore(ahora));
-
-
-            if (fechaValida && horaValida) {
-                double precioAplicandoEsteDescuento = precioActual * (1 - descuento.getPrecioPromocional());
-                if (precioAplicandoEsteDescuento < precioConDescuentoMasAlto) {
-                    precioConDescuentoMasAlto = precioAplicandoEsteDescuento;
-                }
-            }
+        if (detalleEntity.getTalle() != null) {
+            detalleDTO.setTalle(new TalleDTO(detalleEntity.getTalle().getId(), detalleEntity.getTalle().getNombreTalle(), detalleEntity.getTalle().isActivo()));
+        } else {
+            detalleDTO.setTalle(null);
         }
-        return precioConDescuentoMasAlto;
+        detalleDTO.setCantidad(detalleEntity.getStockActual());
+        detalleDTO.setActivo(detalleEntity.isActivo());
+
+        if (detalleEntity.getProducto() != null) {
+            detalleDTO.setProductoId(detalleEntity.getProducto().getId());
+            detalleDTO.setProductoDenominacion(detalleEntity.getProducto().getDenominacion());
+        }
+
+        return detalleDTO;
+    }
+
+    private DescuentoDTO mapearDescuentoADTO(Descuento descuentoEntity) {
+        if (descuentoEntity == null) return null;
+        return DescuentoDTO.builder()
+                .id(descuentoEntity.getId())
+                .denominacion(descuentoEntity.getDenominacion())
+                .fechaDesde(descuentoEntity.getFechaDesde())
+                .fechaHasta(descuentoEntity.getFechaHasta())
+                .horaDesde(descuentoEntity.getHoraDesde())
+                .horaHasta(descuentoEntity.getHoraHasta())
+                .descripcionDescuento(descuentoEntity.getDescripcionDescuento())
+                .precioPromocional(descuentoEntity.getPrecioPromocional())
+                .activo(descuentoEntity.isActivo())
+                .build();
     }
 }

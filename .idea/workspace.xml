@@ -4,8 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8a0af119-c1d2-48ff-a2d4-3e57944b3cc8" name="Changes" comment="&quot;UserProfile casi terminado faltan algunos toques&quot;">
+    <list default="true" id="8a0af119-c1d2-48ff-a2d4-3e57944b3cc8" name="Changes" comment="&quot;Cambios para el front&quot;">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Base.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/Base.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/OrdenCompraDetalle.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/OrdenCompraDetalle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoDetalle.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Entities/ProductoDetalle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraDetalleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraDetalleService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/MercadoPagoPreferenceRequestDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/dto/MercadoPagoPreferenceRequestDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/mercadopago/MercadoPagoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/mercadopago/MercadoPagoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/E-commerce_Project/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/E-commerce_Project/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,13 +32,26 @@
         <task path="$PROJECT_DIR$/E-commerce_Project/build.gradle">
           <activation />
         </task>
-        <projects_view />
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="ecommerce" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
       </state>
     </system>
   </component>
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Enum" />
+        <option value="Exception" />
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
@@ -51,22 +73,25 @@
     &quot;assignee&quot;: &quot;SebastianASU2005&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/santtiojeda8/backendWeb.git",
-    "accountId": "c978bfe3-8077-448a-a8f0-a4ebdecc1d9d"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/santtiojeda8/backendWeb.git&quot;,
+    &quot;accountId&quot;: &quot;c978bfe3-8077-448a-a8f0-a4ebdecc1d9d&quot;
   },
-  "recentNewPullRequestHead": {
-    "server": {
-      "useHttp": false,
-      "host": "github.com",
-      "port": null,
-      "suffix": null
+  &quot;recentNewPullRequestHead&quot;: {
+    &quot;server&quot;: {
+      &quot;useHttp&quot;: false,
+      &quot;host&quot;: &quot;github.com&quot;,
+      &quot;port&quot;: null,
+      &quot;suffix&quot;: null
     },
-    "owner": "santtiojeda8",
-    "repository": "backendWeb"
+    &quot;owner&quot;: &quot;santtiojeda8&quot;,
+    &quot;repository&quot;: &quot;backendWeb&quot;
   }
-}]]></component>
+}</component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
 }</component>
@@ -78,14 +103,18 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.EcommerceApplication.executor": "Run",
+    "Application.Unnamed.executor": "Run",
+    "Gradle.Build E-commerce_Project.executor": "Run",
     "Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle.executor": "Run",
     "Gradle.Download Sources.executor": "Run",
-    "Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor": "Run",
+    "Gradle.E-commerce_Project [:com.ecommerce.ecommerce.EcommerceApplication.main()].executor": "Debug",
+    "Gradle.E-commerce_Project.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "#1 on Reverting in RamaSeba",
+    "git-widget-placeholder": "#2 on RamaSeba",
     "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "E:/Programacion Tareas/Prog/Metolodogia/Gonzales/bACK2/backendWeb",
     "project.structure.last.edited": "Project",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.0"
@@ -128,6 +157,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle" />
+        <item itemvalue="Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle" />
+        <item itemvalue="Gradle.C:/Users/astud/IdeaProjects/backendWeb2/E-commerce_Project/build.gradle" />
       </list>
     </recent_temporary>
   </component>
@@ -147,7 +178,87 @@
       <option name="project" value="LOCAL" />
       <updated>1747790956942</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="&quot;UserProfile casi terminado faltan algunos toques&quot;">
+      <option name="closed" value="true" />
+      <created>1747791729246</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1747791729246</updated>
+    </task>
+    <task id="LOCAL-00003" summary="&quot;UserProfile casi terminado faltan algunos toques&quot;">
+      <option name="closed" value="true" />
+      <created>1747958819026</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1747958819026</updated>
+    </task>
+    <task id="LOCAL-00004" summary="&quot;UserProfile casi terminado faltan algunos toques&quot;">
+      <option name="closed" value="true" />
+      <created>1748022491432</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1748022491432</updated>
+    </task>
+    <task id="LOCAL-00005" summary="&quot;compraProcuto logica de la url&quot;">
+      <option name="closed" value="true" />
+      <created>1748203488767</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1748203488767</updated>
+    </task>
+    <task id="LOCAL-00006" summary="&quot;Inico de implementacion de mercado pago&quot;">
+      <option name="closed" value="true" />
+      <created>1748475301848</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1748475301848</updated>
+    </task>
+    <task id="LOCAL-00007" summary="&quot;Avances mercado Pago funcional y pagina de admin productos a mitad&quot;">
+      <option name="closed" value="true" />
+      <created>1749086159567</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1749086159567</updated>
+    </task>
+    <task id="LOCAL-00008" summary="&quot;Cambios para el front&quot;">
+      <option name="closed" value="true" />
+      <created>1749252176131</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1749252176131</updated>
+    </task>
+    <task id="LOCAL-00009" summary="&quot;Cambios para el front&quot;">
+      <option name="closed" value="true" />
+      <created>1749440886188</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1749440886188</updated>
+    </task>
+    <task id="LOCAL-00010" summary="&quot;Cambios para el front&quot;">
+      <option name="closed" value="true" />
+      <created>1749445027917</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1749445027917</updated>
+    </task>
+    <task id="LOCAL-00011" summary="&quot;Cambios para el front&quot;">
+      <option name="closed" value="true" />
+      <created>1749518423317</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1749518423317</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -163,7 +274,11 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="&quot;UserProfile casi terminado faltan algunos toques&quot;" />
-    <option name="LAST_COMMIT_MESSAGE" value="&quot;UserProfile casi terminado faltan algunos toques&quot;" />
+    <MESSAGE value="&quot;compraProcuto logica de la url&quot;" />
+    <MESSAGE value="&quot;Inico de implementacion de mercado pago&quot;" />
+    <MESSAGE value="&quot;Avances mercado Pago funcional y pagina de admin productos a mitad&quot;" />
+    <MESSAGE value="&quot;Cambios para el front&quot;" />
+    <option name="LAST_COMMIT_MESSAGE" value="&quot;Cambios para el front&quot;" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -172,36 +287,46 @@
           <properties class="java.lang.IllegalStateException" package="java.lang" />
           <option name="timeStamp" value="1" />
         </breakpoint>
+        <line-breakpoint enabled="true" type="java-method">
+          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java</url>
+          <line>449</line>
+          <properties class="com.ecommerce.ecommerce.Services.OrdenCompraService" method="crearOrdenInicial">
+            <option name="EMULATED" value="true" />
+            <option name="WATCH_EXIT" value="false" />
+          </properties>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>60</line>
+          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java</url>
+          <line>457</line>
           <option name="timeStamp" value="3" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>66</line>
+          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java</url>
+          <line>511</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>54</line>
+          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java</url>
+          <line>517</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/Services/OrdenCompraService.java</url>
+          <line>527</line>
           <option name="timeStamp" value="6" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>70</line>
-          <option name="timeStamp" value="7" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/E-commerce_Project/src/main/java/com/ecommerce/ecommerce/config/JwtAuthenticationFilter.java</url>
-          <line>64</line>
-          <option name="timeStamp" value="9" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
     <watches-manager>
       <configuration name="GradleRunConfiguration">
         <watch expression="jwtService" language="JAVA" />
+        <watch expression="productoDTO" />
+        <watch expression="productoDTO" />
+        <watch expression="productoDTO" language="JAVA" />
+        <watch expression="param_8" />
+        <watch expression="param_1" />
+        <watch expression="param_8" />
       </configuration>
     </watches-manager>
   </component>

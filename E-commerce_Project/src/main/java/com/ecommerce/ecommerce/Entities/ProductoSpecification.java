@@ -1,71 +1,87 @@
-package com.ecommerce.ecommerce.Entities;
+package com.ecommerce.ecommerce.Specifications;
 
+import com.ecommerce.ecommerce.Entities.Categoria;
+import com.ecommerce.ecommerce.Entities.Color;
+import com.ecommerce.ecommerce.Entities.Producto;
+import com.ecommerce.ecommerce.Entities.ProductoDetalle; // Importar ProductoDetalle
+import com.ecommerce.ecommerce.Entities.Talle; // Importar Talle
 import com.ecommerce.ecommerce.Entities.enums.Sexo;
-import com.ecommerce.ecommerce.Entities.enums.Color; // Importar Color si es un Enum
-import com.ecommerce.ecommerce.Entities.enums.Talle; // Importar Talle si es un Enum
-
-import jakarta.persistence.criteria.*; // Importar las clases de Criteria API
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
-import java.util.List;
+import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.stream.Collectors; // Importar para usar .collect(Collectors.toList())
+import java.util.List;
+import java.util.stream.Collectors;
 
 // Clase de utilidad para crear especificaciones de filtrado para la entidad Producto
-// Ahora incluyendo filtros basados en ProductoDetalle con listas de valores
 public class ProductoSpecification {
+
+    // Método para filtrar por el campo 'activo'
+    public static Specification<Producto> byActivo(boolean activo) {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("activo"), activo);
+    }
 
     // Especificación para filtrar por denominación (búsqueda por palabra clave)
     public static Specification<Producto> byDenominacionLike(String denominacion) {
         return (root, query, criteriaBuilder) ->
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("denominacion")), "%" + denominacion.toLowerCase() + "%");
+                denominacion == null || denominacion.isEmpty() ?
+                        criteriaBuilder.conjunction() : // No aplicar filtro si la denominación es nula o vacía
+                        criteriaBuilder.like(criteriaBuilder.lower(root.get("denominacion")), "%" + denominacion.toLowerCase() + "%");
     }
 
-    // Especificación para filtrar por una o más categorías
-    public static Specification<Producto> byCategoriasIn(List<String> categorias) {
+    // Especificación para filtrar por TODAS las categorías proporcionadas (lógica AND)
+    public static Specification<Producto> byCategoriasAll(List<String> categorias) {
         return (root, query, criteriaBuilder) -> {
-            // Usamos un Predicate disjuntivo (OR) para verificar si el producto tiene *cualquiera* de las categorías en la lista
-            List<Predicate> categoriaPredicates = new ArrayList<>();
-            // INNER JOIN asegura que solo obtengas productos que tienen categorías
-            Join<Producto, Categoria> categoriasJoin = root.join("categorias", JoinType.INNER);
-
-            for (String categoria : categorias) {
-                if (categoria != null && !categoria.trim().isEmpty()) {
-                    categoriaPredicates.add(criteriaBuilder.equal(criteriaBuilder.lower(categoriasJoin.get("denominacion")), categoria.trim().toLowerCase()));
-                }
+            if (categorias == null || categorias.isEmpty()) {
+                return criteriaBuilder.conjunction(); // No aplicar filtro si la lista está vacía
             }
 
-            // Si la lista de categorías está vacía después de limpiar, retornar true para no filtrar por categoría
-            if (categoriaPredicates.isEmpty()) {
-                return criteriaBuilder.conjunction(); // Siempre verdadero
-            }
+            // Crear una subconsulta para encontrar los IDs de productos que tienen TODAS las categorías
+            Subquery<Long> subquery = query.subquery(Long.class);
+            Root<Producto> subRoot = subquery.from(Producto.class);
+            Join<Producto, Categoria> subCategoryJoin = subRoot.join("categorias"); // 'categorias' es la colección en tu entidad Producto
 
-            // Combinamos los predicados con OR
-            return criteriaBuilder.or(categoriaPredicates.toArray(new Predicate[0]));
+            // Convertir la lista de categorías a minúsculas para una comparación insensible a mayúsculas/minúsculas
+            List<String> lowerCaseCategorias = categorias.stream()
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toList());
+
+            subquery.select(subRoot.get("id")) // Selecciona el ID del producto
+                    .where(criteriaBuilder.lower(subCategoryJoin.get("denominacion")).in(lowerCaseCategorias)) // Donde la categoría está en la lista
+                    .groupBy(subRoot.get("id")) // Agrupa por ID de producto
+                    // Y el conteo de categorías únicas para ese producto debe ser igual al número de categorías en el filtro
+                    .having(criteriaBuilder.equal(criteriaBuilder.count(subRoot.get("id")), (long) categorias.size()));
+
+            // El producto en la consulta principal debe estar en el resultado de la subconsulta
+            return criteriaBuilder.in(root.get("id")).value(subquery);
         };
     }
-
 
     // Especificación para filtrar por sexo
     public static Specification<Producto> bySexo(Sexo sexo) {
         return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("sexo"), sexo); // Compara con el enum Sexo
+                sexo == null ? criteriaBuilder.conjunction() : // No aplicar filtro si el sexo es nulo
+                        criteriaBuilder.equal(root.get("sexo"), sexo); // Compara con el enum Sexo
     }
 
     // Especificación para filtrar por si tiene promoción
     public static Specification<Producto> byTienePromocion(boolean tienePromocion) {
         return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("tienePromocion"), tienePromocion); // Asumiendo propiedad booleana 'tienePromocion'
+                criteriaBuilder.equal(root.get("tienePromocion"), tienePromocion);
     }
 
     // Especificación para filtrar por rango de precio de VENTA
-    // Filtra por 'precioVenta' en lugar del calculado 'precioFinal'
-    public static Specification<Producto> byPrecioVentaBetween(Double precioMin, Double precioMax) {
+    public static Specification<Producto> byPrecioVentaBetween(BigDecimal precioMin, BigDecimal precioMax) {
         return (root, query, criteriaBuilder) -> {
-            Predicate predicate = criteriaBuilder.conjunction(); // Predicado inicial que siempre es verdadero
+            Predicate predicate = criteriaBuilder.conjunction();
 
-            // Usamos el campo existente 'precioVenta' de la entidad Producto
-            Path<Double> precioVentaPath = root.get("precioVenta");
+            Path<BigDecimal> precioVentaPath = root.get("precioVenta");
 
             if (precioMin != null) {
                 predicate = criteriaBuilder.and(predicate, criteriaBuilder.greaterThanOrEqualTo(precioVentaPath, precioMin));
@@ -78,75 +94,80 @@ public class ProductoSpecification {
         };
     }
 
-    // --- Nuevas especificaciones basadas en ProductoDetalle, manejando LISTAS de Strings ---
-
-    // Especificación para filtrar por AL MENOS UN detalle con color en la lista proporcionada
-    public static Specification<Producto> hasDetalleWithAnyColor(List<String> colores) {
+    // Especificación para filtrar por PRODUCTOS que tienen DETALLES con TODOS los colores en la lista (lógica AND)
+    public static Specification<Producto> hasDetalleWithAllColors(List<String> colores) {
         return (root, query, criteriaBuilder) -> {
-            // Usamos un subquery EXISTS para verificar si AL MENOS UN detalle cumple la condición.
-            Subquery<ProductoDetalle> subquery = query.subquery(ProductoDetalle.class);
+            if (colores == null || colores.isEmpty()) {
+                return criteriaBuilder.conjunction(); // No aplicar filtro si la lista está vacía
+            }
+
+            Subquery<Long> subquery = query.subquery(Long.class);
             Root<ProductoDetalle> subRoot = subquery.from(ProductoDetalle.class);
+            Join<ProductoDetalle, Color> colorJoin = subRoot.join("color");
 
-            subquery.select(subRoot);
-
-            // 1. El producto del detalle en el subquery debe ser el mismo que el producto en la query principal.
-            Predicate productoMatch = criteriaBuilder.equal(subRoot.get("producto"), root);
-
-            // 2. El color del detalle debe estar en la lista de colores proporcionada (insensible a mayúsculas/minúsculas).
-            // Asumimos que el campo 'color' en ProductoDetalle es un Enum o una entidad con un nombre string.
-            // Si es un Enum, usamos .as(String.class) para compararlo con la lista de Strings.
-            Expression<String> detalleColorExpression = subRoot.get("color").as(String.class); // Tratar como String para comparación
-
-            // Convertir la lista de colores del frontend a minúsculas para la comparación
             List<String> lowerCaseColores = colores.stream()
                     .map(String::toLowerCase)
                     .collect(Collectors.toList());
 
-            // Usamos criteriaBuilder.lower() en la expresión del detalle y luego .in() con la lista de minúsculas
-            Predicate colorMatch = criteriaBuilder.lower(detalleColorExpression).in(lowerCaseColores);
+            subquery.select(subRoot.get("producto").get("id")) // Selecciona el ID del producto asociado al detalle
+                    .where(criteriaBuilder.and(
+                            criteriaBuilder.lower(colorJoin.get("nombreColor")).in(lowerCaseColores),
+                            criteriaBuilder.isTrue(subRoot.get("activo")) // Solo detalles activos
+                    ))
+                    .groupBy(subRoot.get("producto").get("id")) // Agrupa por ID de producto
+                    // El producto debe tener un número de colores distintos (a través de sus detalles activos)
+                    // que sea igual al número de colores buscados
+                    .having(criteriaBuilder.equal(
+                            criteriaBuilder.countDistinct(colorJoin.get("nombreColor")),
+                            (long) colores.size()
+                    ));
 
-            subquery.where(criteriaBuilder.and(productoMatch, colorMatch));
-
-            // Devolvemos la predicado principal: existe AL MENOS UN detalle que cumple las condiciones del subquery
-            return criteriaBuilder.exists(subquery);
+            // El producto en la consulta principal debe estar en el resultado de la subconsulta
+            return criteriaBuilder.in(root.get("id")).value(subquery);
         };
     }
 
-    // Especificación para filtrar por AL MENOS UN detalle con talle en la lista proporcionada
-    public static Specification<Producto> hasDetalleWithAnyTalle(List<String> talles) {
+    // Especificación para filtrar por PRODUCTOS que tienen DETALLES con TODOS los talles en la lista (lógica AND)
+    public static Specification<Producto> hasDetalleWithAllTalles(List<String> talles) {
         return (root, query, criteriaBuilder) -> {
-            // Similar al filtro por color, usamos un subquery EXISTS
-            Subquery<ProductoDetalle> subquery = query.subquery(ProductoDetalle.class);
+            if (talles == null || talles.isEmpty()) {
+                return criteriaBuilder.conjunction(); // No aplicar filtro si la lista está vacía
+            }
+
+            Subquery<Long> subquery = query.subquery(Long.class);
             Root<ProductoDetalle> subRoot = subquery.from(ProductoDetalle.class);
+            Join<ProductoDetalle, Talle> talleJoin = subRoot.join("talle");
 
-            subquery.select(subRoot);
-
-            Predicate productoMatch = criteriaBuilder.equal(subRoot.get("producto"), root);
-
-            // 2. El talle del detalle debe estar en la lista de talles proporcionada (insensible a mayúsculas/minúsculas).
-            // Asumimos que el campo 'talle' en ProductoDetalle es un Enum o una entidad con un nombre string.
-            // Si es un Enum, usamos .as(String.class) para compararlo con la lista de Strings.
-            Expression<String> detalleTalleExpression = subRoot.get("talle").as(String.class); // Tratar como String para comparación
-
-            // Convertir la lista de talles del frontend a minúsculas
             List<String> lowerCaseTalles = talles.stream()
                     .map(String::toLowerCase)
                     .collect(Collectors.toList());
 
-            Predicate talleMatch = criteriaBuilder.lower(detalleTalleExpression).in(lowerCaseTalles); // Usar lower().in()
+            subquery.select(subRoot.get("producto").get("id")) // Selecciona el ID del producto asociado al detalle
+                    .where(criteriaBuilder.and(
+                            criteriaBuilder.lower(talleJoin.get("nombreTalle")).in(lowerCaseTalles),
+                            criteriaBuilder.isTrue(subRoot.get("activo")) // Solo detalles activos
+                    ))
+                    .groupBy(subRoot.get("producto").get("id")) // Agrupa por ID de producto
+                    // El producto debe tener un número de talles distintos (a través de sus detalles activos)
+                    // que sea igual al número de talles buscados
+                    .having(criteriaBuilder.equal(
+                            criteriaBuilder.countDistinct(talleJoin.get("nombreTalle")),
+                            (long) talles.size()
+                    ));
 
-            subquery.where(criteriaBuilder.and(productoMatch, talleMatch));
-
-            return criteriaBuilder.exists(subquery);
+            // El producto en la consulta principal debe estar en el resultado de la subconsulta
+            return criteriaBuilder.in(root.get("id")).value(subquery);
         };
     }
 
-
     // Especificación para filtrar por stock actual mínimo en ProductoDetalle
-    // Asumiendo que quieres productos que tienen AL MENOS UN detalle con stock >= stockMinimo
     public static Specification<Producto> hasDetalleWithStockActualGreaterThan(Integer stockMinimo) {
         return (root, query, criteriaBuilder) -> {
-            // Similar al filtro por color, usamos un subquery EXISTS
+            if (stockMinimo == null || stockMinimo <= 0) { // Considerar stockMinimo <= 0 como "no filtrar"
+                return criteriaBuilder.conjunction();
+            }
+
+            // Usamos un subquery EXISTS para verificar si AL MENOS UN detalle cumple la condición.
             Subquery<ProductoDetalle> subquery = query.subquery(ProductoDetalle.class);
             Root<ProductoDetalle> subRoot = subquery.from(ProductoDetalle.class);
 
@@ -154,38 +175,33 @@ public class ProductoSpecification {
 
             Predicate productoMatch = criteriaBuilder.equal(subRoot.get("producto"), root);
             Predicate stockMatch = criteriaBuilder.greaterThanOrEqualTo(subRoot.get("stockActual"), stockMinimo);
+            Predicate activoMatch = criteriaBuilder.isTrue(subRoot.get("activo")); // Solo detalles activos
 
-            subquery.where(criteriaBuilder.and(productoMatch, stockMatch));
+            subquery.where(criteriaBuilder.and(productoMatch, stockMatch, activoMatch));
 
             return criteriaBuilder.exists(subquery);
         };
     }
 
-
     // Método para combinar múltiples especificaciones con AND
-    // Recibe listas de Strings para colores y talles, y otros parámetros
-    // *** CORRECCIÓN: Eliminados los parámetros sortBy y sortDir ***
     public static Specification<Producto> withFilters(
             String denominacion,
             List<String> categorias,
             Sexo sexo,
             Boolean tienePromocion,
-            Double precioMin,
-            Double precioMax,
-            // Recibe List<String> para colores y talles
+            BigDecimal precioMin,
+            BigDecimal precioMax,
             List<String> colores,
             List<String> talles,
             Integer stockMinimo
-            // Eliminados: String sortBy, String sortDir
     ) {
         Specification<Producto> spec = Specification.where(null); // Comienza con una especificación vacía (siempre true)
 
         if (denominacion != null && !denominacion.trim().isEmpty()) {
             spec = spec.and(byDenominacionLike(denominacion.trim()));
         }
-        // Llamar a la especificación con la lista de categorías si no está vacía
         if (categorias != null && !categorias.isEmpty()) {
-            spec = spec.and(byCategoriasIn(categorias));
+            spec = spec.and(byCategoriasAll(categorias)); // <--- USA LA NUEVA LÓGICA "ALL"
         }
         if (sexo != null) {
             spec = spec.and(bySexo(sexo));
@@ -193,25 +209,20 @@ public class ProductoSpecification {
         if (tienePromocion != null) {
             spec = spec.and(byTienePromocion(tienePromocion));
         }
-        // Llamar a la especificación que usa precioVenta
         if (precioMin != null || precioMax != null) {
             spec = spec.and(byPrecioVentaBetween(precioMin, precioMax));
         }
 
-        // Combinar con las especificaciones de ProductoDetalle que manejan listas
-        // Llamar a las nuevas especificaciones con las listas de colores y talles si no están nulas/vacías
         if (colores != null && !colores.isEmpty()) {
-            spec = spec.and(hasDetalleWithAnyColor(colores)); // Llama a la nueva especificación
+            spec = spec.and(hasDetalleWithAllColors(colores)); // <--- USA LA NUEVA LÓGICA "ALL"
         }
         if (talles != null && !talles.isEmpty()) {
-            spec = spec.and(hasDetalleWithAnyTalle(talles)); // Llama a la nueva especificación
+            spec = spec.and(hasDetalleWithAllTalles(talles)); // <--- USA LA NUEVA LÓGICA "ALL"
         }
         if (stockMinimo != null) {
             spec = spec.and(hasDetalleWithStockActualGreaterThan(stockMinimo));
         }
-        // Fin combinación especificaciones ProductoDetalle
 
-
-        return spec; // Retorna la especificación combinada (el WHERE clause)
+        return spec;
     }
 }

@@ -10,7 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDate; // <-- NUEVO: Importar LocalDate
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -33,7 +33,7 @@ public class Usuario extends Base implements UserDetails {
     private String nombre;
     private String apellido;
 
-    @Column(name = "email", unique = true)
+    @Column(name = "email") // Removed unique = true
     protected String email;
 
     private Integer dni;
@@ -42,19 +42,17 @@ public class Usuario extends Base implements UserDetails {
     @Column(name = "sexo", length = 20)
     private Sexo sexo;
 
-    // --- NUEVOS CAMPOS ---
-    @Column(name = "fecha_nacimiento") // <-- NUEVO CAMPO
+    @Column(name = "fecha_nacimiento")
     private LocalDate fechaNacimiento;
 
-    @Column(name = "telefono") // <-- NUEVO CAMPO
+    @Column(name = "telefono")
     private String telefono;
-    // --- FIN NUEVOS CAMPOS ---
 
     @Enumerated(EnumType.STRING)
     @Column(name = "rol", nullable = false)
     private Rol rol;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true) // Añadir cascade y orphanRemoval para la imagen
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name="imagen_id")
     protected Imagen imagenUser;
 
@@ -69,7 +67,6 @@ public class Usuario extends Base implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Asegúrate de que el nombre del rol tenga el prefijo "ROLE_"
         return List.of(new SimpleGrantedAuthority("ROLE_" + rol.name()));
     }
 
@@ -93,7 +90,7 @@ public class Usuario extends Base implements UserDetails {
     public boolean isCredentialsNonExpired() { return true; }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return true; } // This should reflect the 'activo' field
 
     public void addDireccion(Direccion direccion) {
         direcciones.add(direccion);
@@ -104,4 +101,22 @@ public class Usuario extends Base implements UserDetails {
         direcciones.remove(direccion);
         direccion.setUsuario(null);
     }
+
+    // --- NEW METHODS ---
+    public boolean isActivo() {
+        return super.isActivo(); // Assuming 'activo' is in the Base class
+    }
+
+    public void setActivo(boolean activo) {
+        super.setActivo(activo); // Assuming 'activo' is in the Base class
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+    // --- END NEW METHODS ---
 }

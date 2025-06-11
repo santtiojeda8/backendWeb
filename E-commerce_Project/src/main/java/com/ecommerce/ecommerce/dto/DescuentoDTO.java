@@ -1,10 +1,19 @@
+// src/main/java/com/ecommerce/ecommerce/dto/DescuentoDTO.java
 package com.ecommerce.ecommerce.dto;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-// DTO para representar la información de un descuento.
-// Asegúrate de que esta definición coincida con la entidad Descuento
+import java.math.BigDecimal; // Importar BigDecimal
+import java.time.LocalTime; // O Instant, LocalDate, etc., según tu entidad
+import java.time.LocalDate;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class DescuentoDTO {
     private Long id;
     private String denominacion;
@@ -13,38 +22,6 @@ public class DescuentoDTO {
     private LocalTime horaDesde;
     private LocalTime horaHasta;
     private String descripcionDescuento;
-    private Double precioPromocional; // Asumimos que es un factor (ej: 0.10 para 10%)
-
-    // Constructor vacío
-    public DescuentoDTO() {}
-
-    // Constructor con campos
-    public DescuentoDTO(Long id, String denominacion, LocalDate fechaDesde, LocalDate fechaHasta, LocalTime horaDesde, LocalTime horaHasta, String descripcionDescuento, Double precioPromocional) {
-        this.id = id;
-        this.denominacion = denominacion;
-        this.fechaDesde = fechaDesde;
-        this.fechaHasta = fechaHasta;
-        this.horaDesde = horaDesde;
-        this.horaHasta = horaHasta;
-        this.descripcionDescuento = descripcionDescuento;
-        this.precioPromocional = precioPromocional;
-    }
-
-    // Getters y Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getDenominacion() { return denominacion; }
-    public void setDenominacion(String denominacion) { this.denominacion = denominacion; }
-    public LocalDate getFechaDesde() { return fechaDesde; }
-    public void setFechaDesde(LocalDate fechaDesde) { this.fechaDesde = fechaDesde; }
-    public LocalDate getFechaHasta() { return fechaHasta; }
-    public void setFechaHasta(LocalDate fechaHasta) { this.fechaHasta = fechaHasta; }
-    public LocalTime getHoraDesde() { return horaDesde; }
-    public void setHoraDesde(LocalTime horaDesde) { this.horaDesde = horaDesde; }
-    public LocalTime getHoraHasta() { return horaHasta; }
-    public void setHoraHasta(LocalTime horaHasta) { this.horaHasta = horaHasta; }
-    public String getDescripcionDescuento() { return descripcionDescuento; }
-    public void setDescripcionDescuento(String descripcionDescuento) { this.descripcionDescuento = descripcionDescuento; }
-    public Double getPrecioPromocional() { return precioPromocional; }
-    public void setPrecioPromocional(Double precioPromocional) { this.precioPromocional = precioPromocional; }
+    private BigDecimal precioPromocional; // <--- ¡Asegúrate de que exista y sea BigDecimal!
+    private boolean activo; // <--- ¡Asegúrate de que exista!
 }

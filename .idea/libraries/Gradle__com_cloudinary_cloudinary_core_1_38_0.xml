@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="Gradle: com.cloudinary:cloudinary-core:1.38.0" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="com.cloudinary" artifactId="cloudinary-core" version="1.38.0" baseVersion="1.38.0" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.cloudinary/cloudinary-core/1.38.0/e45065628de89a7ee83c2ef569f3e687ca59afe5/cloudinary-core-1.38.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

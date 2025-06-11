@@ -1,22 +1,23 @@
+// com.ecommerce.ecommerce.Entities.Localidad.java
 package com.ecommerce.ecommerce.Entities;
-
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
 @Entity
 @Table(name="localidades")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class Localidad extends Base{
+@SuperBuilder
+public class Localidad extends Base { // Hereda 'activo' de Base
     @Column(name="localidad")
     private String nombre;
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY) // Siempre es buena práctica lazy en ManyToOne
     @JoinColumn(name="provincia_id")
     private Provincia provincia;
 }
-

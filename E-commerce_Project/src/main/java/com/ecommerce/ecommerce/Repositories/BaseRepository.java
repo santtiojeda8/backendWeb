@@ -1,12 +1,19 @@
-// src/main/java/com/ecommerce/ecommerce/Repositories/BaseRepository.java
 package com.ecommerce.ecommerce.Repositories;
 
+import com.ecommerce.ecommerce.Entities.Base;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 
-// @NoRepositoryBean es importante para que Spring Data JPA no intente crear una implementación
-// para esta interfaz directamente, ya que es una interfaz base para otros repositorios.
+import java.io.Serializable;
+import java.util.List;
+import java.util.Optional;
+
 @NoRepositoryBean
-public interface BaseRepository<E, ID> extends JpaRepository<E, ID> {
-    // Aquí puedes añadir métodos comunes a todos tus repositorios si los necesitas
+public interface BaseRepository<E extends Base, ID extends Serializable> extends JpaRepository<E, ID> {
+
+    List<E> findAllByActivoTrue();
+    Page<E> findAllByActivoTrue(Pageable pageable);
+    Optional<E> findByIdAndActivoTrue(ID id);
 }

@@ -2,18 +2,21 @@ package com.ecommerce.ecommerce.Services;
 
 import com.ecommerce.ecommerce.Entities.Direccion;
 import com.ecommerce.ecommerce.Entities.Localidad;
-import com.ecommerce.ecommerce.Entities.Provincia;
 import com.ecommerce.ecommerce.Entities.Usuario;
-import com.ecommerce.ecommerce.Entities.Imagen; // Asegúrate de que la entidad Imagen sea la correcta
+import com.ecommerce.ecommerce.Entities.Imagen;
 import com.ecommerce.ecommerce.Repositories.UsuarioRepository;
 import com.ecommerce.ecommerce.Repositories.DireccionRepository;
-import com.ecommerce.ecommerce.dto.DomicilioDTO;
-import com.ecommerce.ecommerce.dto.ImagenDTO; // Asegúrate de que ImagenDTO sea la correcta
+import com.ecommerce.ecommerce.Repositories.LocalidadRepository;
+import com.ecommerce.ecommerce.dto.DireccionDTO;
+import com.ecommerce.ecommerce.dto.ImagenDTO;
+import com.ecommerce.ecommerce.dto.LocalidadDTO;
+import com.ecommerce.ecommerce.dto.ProvinciaDTO;
 import com.ecommerce.ecommerce.dto.UpdateCredentialsRequest;
-import com.ecommerce.ecommerce.dto.UserDTO; // Asegúrate de que UserDTO sea la correcta
+import com.ecommerce.ecommerce.dto.UserDTO;
 import com.ecommerce.ecommerce.dto.UserProfileUpdateDTO;
 
-import org.springframework.beans.factory.annotation.Value; // Importar para @Value
+import org.hibernate.Hibernate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
@@ -21,32 +24,77 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException; // Para manejar excepciones de archivo
-import java.nio.file.Files; // Para operaciones de archivo
-import java.nio.file.Path; // Para rutas de archivo
-import java.nio.file.Paths; // Para construir rutas
-import java.nio.file.StandardCopyOption; // Para opciones de copia de archivo
-import java.time.LocalDate;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.Collections;
+
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID; // Para generar nombres de archivo únicos
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+
 @Service
-public class UsuarioService extends BaseService<Usuario,Long> {
+public class UsuarioService extends BaseService<Usuario,Long> implements UserDetailsService {
 
     private final UsuarioRepository usuarioRepository;
     private final DireccionRepository direccionRepository;
+    private final LocalidadRepository localidadRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    @Value("${file.upload-dir}") // Inyecta el valor de la propiedad del directorio de subidas
+    @Value("${file.upload-dir}")
     private String uploadDir;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, DireccionRepository direccionRepository){
+    public UsuarioService(UsuarioRepository usuarioRepository,
+                          DireccionRepository direccionRepository,
+                          LocalidadRepository localidadRepository,
+                          PasswordEncoder passwordEncoder){
         super(usuarioRepository);
         this.usuarioRepository = usuarioRepository;
         this.direccionRepository = direccionRepository;
+        this.localidadRepository = localidadRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+        Usuario usuario;
+
+        Optional<Usuario> byUserName = usuarioRepository.findByUserNameAndActivoTrue(usernameOrEmail);
+
+        if (byUserName.isPresent()) {
+            usuario = byUserName.get();
+        } else {
+            Optional<Usuario> byEmail = usuarioRepository.findByEmailAndActivoTrue(usernameOrEmail);
+            if (byEmail.isPresent()) {
+                usuario = byEmail.get();
+            } else {
+                throw new UsernameNotFoundException("Usuario o email no encontrado o inactivo: " + usernameOrEmail);
+            }
+        }
+
+        if (!usuario.isActivo()) {
+            throw new UsernameNotFoundException("La cuenta del usuario está inactiva: " + usernameOrEmail);
+        }
+
+        return new org.springframework.security.core.userdetails.User(
+                usuario.getUsername(),
+                usuario.getPassword(),
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + usuario.getRol().name()))
+        );
     }
 
     @Transactional
@@ -57,7 +105,10 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         }
         Usuario usuario = optionalUsuario.get();
 
-        // Lógica de actualización de campos no nulos
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede ser modificada.");
+        }
+
         if (updateDTO.getFirstname() != null) {
             usuario.setNombre(updateDTO.getFirstname());
         }
@@ -72,41 +123,61 @@ public class UsuarioService extends BaseService<Usuario,Long> {
             usuario.setTelefono(updateDTO.getTelefono());
         }
 
-        // Lógica de actualización de direcciones (como la tienes, asumiendo cascade.ALL y orphanRemoval=true)
         if (updateDTO.getAddresses() != null) {
-            Set<Direccion> direccionesActualizadas = new HashSet<>();
-            for (DomicilioDTO dtoAddress : updateDTO.getAddresses()) {
-                Direccion existingAddress = usuario.getDirecciones().stream()
-                        .filter(a -> a.getId() != null && a.getId().equals(dtoAddress.getId()))
-                        .findFirst()
-                        .orElse(null);
-                if (existingAddress != null) {
-                    existingAddress.setCalle(dtoAddress.getCalle());
-                    existingAddress.setNumero(dtoAddress.getNumero());
-                    existingAddress.setPiso(dtoAddress.getPiso());
-                    existingAddress.setDepartamento(dtoAddress.getDepartamento());
-                    existingAddress.setCp(dtoAddress.getCp());
-                    // Asume que Localidad y Provincia se manejan aparte si es necesario actualizar solo sus nombres
-                    direccionesActualizadas.add(existingAddress);
+            Hibernate.initialize(usuario.getDirecciones());
+
+            Set<Direccion> direccionesEnviadasYActualizadas = new HashSet<>();
+
+            for (DireccionDTO dtoAddress : updateDTO.getAddresses()) {
+                Direccion currentAddressEntity;
+
+                if (dtoAddress.getId() != null) {
+                    currentAddressEntity = usuario.getDirecciones().stream()
+                            .filter(a -> a.getId() != null && a.getId().equals(dtoAddress.getId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (currentAddressEntity == null) {
+                        currentAddressEntity = new Direccion();
+                        currentAddressEntity.setUsuario(usuario);
+                    }
                 } else {
-                    Direccion newAddress = new Direccion();
-                    newAddress.setCalle(dtoAddress.getCalle());
-                    newAddress.setNumero(dtoAddress.getNumero());
-                    newAddress.setPiso(dtoAddress.getPiso());
-                    newAddress.setDepartamento(dtoAddress.getDepartamento());
-                    newAddress.setCp(dtoAddress.getCp());
-                    newAddress.setUsuario(usuario); // Asegúrate de vincular la nueva dirección al usuario
-                    // Si tienes Localidad y Provincia DTOs, necesitarías buscar/crear las entidades aquí
-                    direccionesActualizadas.add(newAddress);
+                    currentAddressEntity = new Direccion();
+                    currentAddressEntity.setUsuario(usuario);
+                }
+
+                currentAddressEntity.setCalle(dtoAddress.getCalle());
+                currentAddressEntity.setNumero(dtoAddress.getNumero());
+                currentAddressEntity.setPiso(dtoAddress.getPiso());
+                currentAddressEntity.setDepartamento(dtoAddress.getDepartamento());
+                currentAddressEntity.setCp(dtoAddress.getCp());
+
+                if (dtoAddress.getLocalidad() != null && dtoAddress.getLocalidad().getId() != null) {
+                    Localidad localidad = localidadRepository.findById(dtoAddress.getLocalidad().getId())
+                            .orElseThrow(() -> new RuntimeException("Localidad con ID " + dtoAddress.getLocalidad().getId() + " no encontrada."));
+                    currentAddressEntity.setLocalidad(localidad);
+                } else {
+                    currentAddressEntity.setLocalidad(null);
+                }
+
+                direccionesEnviadasYActualizadas.add(currentAddressEntity);
+            }
+
+            List<Direccion> direccionesActualesDelUsuario = new ArrayList<>(usuario.getDirecciones());
+            for (Direccion existingDireccion : direccionesActualesDelUsuario) {
+                if (!direccionesEnviadasYActualizadas.contains(existingDireccion)) {
+                    usuario.removeDireccion(existingDireccion);
                 }
             }
-            // Elimina las referencias existentes y añade las actualizadas
-            // Asegúrate de que la relación @OneToMany en Usuario tenga orphanRemoval=true para que las direcciones eliminadas se borren de la BD
-            usuario.getDirecciones().clear();
-            usuario.getDirecciones().addAll(direccionesActualizadas);
+
+            for (Direccion newOrUpdatedDireccion : direccionesEnviadasYActualizadas) {
+                if (!usuario.getDirecciones().contains(newOrUpdatedDireccion)) {
+                    usuario.addDireccion(newOrUpdatedDireccion);
+                }
+            }
+
         } else if (updateDTO.getAddresses() != null && updateDTO.getAddresses().isEmpty()) {
-            // Si la lista de direcciones se envía vacía, se eliminan todas las direcciones del usuario
-            usuario.getDirecciones().forEach(address -> address.setUsuario(null)); // Desvincula para orphanRemoval
+            Hibernate.initialize(usuario.getDirecciones());
             usuario.getDirecciones().clear();
         }
 
@@ -124,16 +195,18 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         Object principal = authentication.getPrincipal();
         if (principal instanceof UserDetails userDetails) {
             try {
-                // Si el username es el ID del usuario
                 userId = Long.parseLong(userDetails.getUsername());
             } catch (NumberFormatException e) {
-                // Si el username es el email del usuario
-                Usuario userByEmail = usuarioRepository.findByEmail(userDetails.getUsername())
-                        .orElseThrow(() -> new RuntimeException("Usuario con email " + userDetails.getUsername() + " no encontrado."));
+                Usuario userByEmail = usuarioRepository.findByEmailAndActivoTrue(userDetails.getUsername())
+                        .orElseThrow(() -> new RuntimeException("Usuario con email " + userDetails.getUsername() + " no encontrado o inactivo."));
                 userId = userByEmail.getId();
             }
         } else if (principal instanceof Long) {
             userId = (Long) principal;
+        } else if (principal instanceof String) {
+            Usuario userByUsername = usuarioRepository.findByUserNameAndActivoTrue((String)principal)
+                    .orElseThrow(() -> new RuntimeException("Usuario con username " + (String)principal + " no encontrado o inactivo."));
+            userId = userByUsername.getId();
         } else {
             throw new IllegalStateException("Formato de principal de seguridad no soportado. No se pudo obtener el ID del usuario.");
         }
@@ -143,24 +216,36 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         final Long finalUserId = userId;
         Usuario usuario = usuarioRepository.findById(finalUserId)
                 .orElseThrow(() -> new RuntimeException("Usuario con ID " + finalUserId + " no encontrado en la base de datos."));
+
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta del usuario está desactivada.");
+        }
+
         return mapToUserDTO(usuario);
     }
 
+    @Transactional(readOnly = true)
     public UserDTO mapToUserDTO(Usuario usuario) {
         if (usuario == null) {
             return null;
         }
-        List<DomicilioDTO> domicilioDTOs = null;
+
+        List<DireccionDTO> direccionDTOS = null;
         if (usuario.getDirecciones() != null) {
-            domicilioDTOs = usuario.getDirecciones().stream()
+            Hibernate.initialize(usuario.getDirecciones());
+            direccionDTOS = usuario.getDirecciones().stream()
                     .map(this::mapToDomicilioDTO)
                     .collect(Collectors.toList());
         }
+
         ImagenDTO imagenDTO = null;
-        // Asegúrate de que el nombre del campo de la imagen en Usuario sea `imagenUser`
         if (usuario.getImagenUser() != null) {
+            Hibernate.initialize(usuario.getImagenUser());
             imagenDTO = mapToImagenDTO(usuario.getImagenUser());
+            // No mapear la propiedad 'activo' de la imagen aquí, ya que no corresponde al usuario
+            // imagenDTO.setActivo(imagen.isActivo()); // <--- ¡EVITAR ESTO!
         }
+
         return UserDTO.builder()
                 .id(usuario.getId())
                 .username(usuario.getUsername())
@@ -171,26 +256,46 @@ public class UsuarioService extends BaseService<Usuario,Long> {
                 .sexo(usuario.getSexo())
                 .fechaNacimiento(usuario.getFechaNacimiento())
                 .telefono(usuario.getTelefono())
-                .addresses(domicilioDTOs)
+                .addresses(direccionDTOS)
                 .role(usuario.getRol())
-                .profileImage(imagenDTO)
+                .imagenUser(imagenDTO)
+                .activo(usuario.isActivo()) // <--- ¡AÑADIR ESTA LÍNEA!
                 .build();
     }
 
-    private DomicilioDTO mapToDomicilioDTO(Direccion direccion) {
+    @Transactional(readOnly = true)
+    public DireccionDTO mapToDomicilioDTO(Direccion direccion) {
         if (direccion == null) {
             return null;
         }
-        return DomicilioDTO.builder()
+
+        LocalidadDTO localidadDTO = null;
+        if (direccion.getLocalidad() != null) {
+            Hibernate.initialize(direccion.getLocalidad());
+
+            ProvinciaDTO provinciaDTO = null;
+            if (direccion.getLocalidad().getProvincia() != null) {
+                Hibernate.initialize(direccion.getLocalidad().getProvincia());
+                provinciaDTO = ProvinciaDTO.builder()
+                        .id(direccion.getLocalidad().getProvincia().getId())
+                        .nombre(direccion.getLocalidad().getProvincia().getNombre())
+                        .build();
+            }
+            localidadDTO = LocalidadDTO.builder()
+                    .id(direccion.getLocalidad().getId())
+                    .nombre(direccion.getLocalidad().getNombre())
+                    .provincia(provinciaDTO)
+                    .build();
+        }
+
+        return DireccionDTO.builder()
                 .id(direccion.getId())
                 .calle(direccion.getCalle())
                 .numero(direccion.getNumero())
                 .piso(direccion.getPiso())
                 .departamento(direccion.getDepartamento())
                 .cp(direccion.getCp())
-                .localidadNombre(direccion.getLocalidad() != null ? direccion.getLocalidad().getNombre() : null)
-                .provinciaNombre(direccion.getLocalidad() != null && direccion.getLocalidad().getProvincia() != null ?
-                        direccion.getLocalidad().getProvincia().getNombre() : null)
+                .localidad(localidadDTO)
                 .build();
     }
 
@@ -200,7 +305,7 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         }
         return ImagenDTO.builder()
                 .id(imagen.getId())
-                .url(imagen.getDenominacion()) // 'denominacion' de la entidad Imagen es la URL pública
+                .url(imagen.getUrl())
                 .build();
     }
 
@@ -216,47 +321,40 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         }
         Usuario usuario = optionalUsuario.get();
 
-        // Obtener la extensión del archivo original
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede ser modificada.");
+        }
+
         String originalFilename = file.getOriginalFilename();
         String fileExtension = "";
         if (originalFilename != null && originalFilename.contains(".")) {
             fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
 
-        // Generar un nombre de archivo único usando UUID
         String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
         Path copyLocation = Paths.get(uploadDir + java.io.File.separator + uniqueFilename);
 
-        // Asegurarse de que el directorio de subida exista
         try {
             Files.createDirectories(copyLocation.getParent());
         } catch (IOException e) {
             throw new IOException("No se pudo crear el directorio de subida: " + copyLocation.getParent(), e);
         }
 
-        // Guardar el archivo físicamente
         try {
             Files.copy(file.getInputStream(), copyLocation, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new IOException("Error al guardar el archivo de imagen: " + uniqueFilename, e);
         }
 
-        // Construir la URL completa que será accesible desde el frontend
-        // Usa la URL de tu aplicación, por ejemplo, "http://localhost:8080" en desarrollo.
-        // En producción, sería "https://tudominio.com"
-        String baseUrl = "http://localhost:8080"; // <<< ¡CAMBIA ESTO PARA PRODUCCIÓN!
-        String imageUrl = baseUrl + "/uploads/" + uniqueFilename; // La URL accesible públicamente
+        String baseUrl = "http://localhost:8080";
+        String imageUrl = baseUrl + "/uploads/" + uniqueFilename;
 
         Imagen imagenUser = usuario.getImagenUser();
         if (imagenUser == null) {
             imagenUser = new Imagen();
         }
-        imagenUser.setDenominacion(imageUrl); // Guarda la URL completa en la base de datos
-        // Si tu entidad Imagen tiene un campo para la ruta local del archivo (recomendado):
-        // imagenUser.setRutaLocal(copyLocation.toString()); // Descomenta y añade este campo a tu entidad Imagen
-
-        usuario.setImagenUser(imagenUser); // Asocia la imagen al usuario
-        // El `usuarioRepository.save()` persistirá la entidad `Imagen` debido a la relación `CascadeType.ALL`
+        imagenUser.setUrl(imageUrl);
+        usuario.setImagenUser(imagenUser);
         Usuario savedUsuario = usuarioRepository.save(usuario);
 
         return mapToUserDTO(savedUsuario);
@@ -269,22 +367,52 @@ public class UsuarioService extends BaseService<Usuario,Long> {
             throw new RuntimeException("Usuario no encontrado con ID: " + userId);
         }
         Usuario usuario = optionalUsuario.get();
-        if (request.getNewEmail() != null && !request.getNewEmail().isEmpty()) {
+
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede ser modificada.");
+        }
+
+        if (request.getCurrentPassword() == null || request.getCurrentPassword().isEmpty()) {
+            throw new IllegalArgumentException("La contraseña actual es requerida para confirmar los cambios.");
+        }
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), usuario.getPassword())) {
+            throw new BadCredentialsException("Contraseña actual incorrecta.");
+        }
+
+        boolean changesMade = false;
+
+        if (request.getNewEmail() != null && !request.getNewEmail().trim().isEmpty() && !request.getNewEmail().equals(usuario.getEmail())) {
+            long activeUsersWithNewEmail = usuarioRepository.countByEmailAndActivoTrue(request.getNewEmail());
+            if (activeUsersWithNewEmail > 0) {
+                throw new IllegalArgumentException("El nuevo correo electrónico ya está en uso por otra cuenta activa.");
+            }
             usuario.setEmail(request.getNewEmail());
+            usuario.setUserName(request.getNewEmail());
+            changesMade = true;
         }
-        if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
-            // TODO: Implementar lógica de cambio de contraseña con PasswordEncoder
-            // usuario.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+        if (request.getNewPassword() != null && !request.getNewPassword().trim().isEmpty()) {
+            if (passwordEncoder.matches(request.getNewPassword(), usuario.getPassword())) {
+                throw new IllegalArgumentException("La nueva contraseña no puede ser igual a la actual.");
+            }
+            usuario.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            changesMade = true;
         }
-        usuarioRepository.save(usuario);
-        return mapToUserDTO(usuario);
+
+        if (!changesMade) {
+            System.out.println("DEBUG: No se realizaron cambios de email o contraseña.");
+            return mapToUserDTO(usuario);
+        }
+
+        Usuario savedUsuario = usuarioRepository.save(usuario);
+        System.out.println("DEBUG: Usuario con ID " + userId + " credenciales actualizadas y guardadas.");
+        return mapToUserDTO(savedUsuario);
     }
 
-    // --- MÉTODOS REQUERIDOS POR EL CONTROLADOR ---
-
     @Transactional(readOnly = true)
-    public Optional<Usuario> findByUserName(String username) {
-        return usuarioRepository.findByUserName(username);
+    public Optional<Usuario> findByUserNameAndActivoTrue(String username) {
+        return usuarioRepository.findByUserNameAndActivoTrue(username);
     }
 
     @Transactional(readOnly = true)
@@ -292,8 +420,10 @@ public class UsuarioService extends BaseService<Usuario,Long> {
         try {
             return Long.parseLong(usernameOrEmail);
         } catch (NumberFormatException e) {
-            Usuario usuario = usuarioRepository.findByEmail(usernameOrEmail)
-                    .orElseThrow(() -> new RuntimeException("Usuario con username/email " + usernameOrEmail + " no encontrado."));
+            Usuario usuario = usuarioRepository.findByEmailAndActivoTrue(usernameOrEmail)
+                    .orElseGet(() -> usuarioRepository.findByUserNameAndActivoTrue(usernameOrEmail)
+                            .orElseThrow(() -> new RuntimeException("Usuario con username/email " + usernameOrEmail + " no encontrado o inactivo.")));
+
             return usuario.getId();
         }
     }
@@ -302,35 +432,70 @@ public class UsuarioService extends BaseService<Usuario,Long> {
     public List<Direccion> getDireccionesByUserId(Long userId) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
-        return List.copyOf(usuario.getDirecciones());
+
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("No se pueden obtener direcciones de una cuenta desactivada.");
+        }
+        Hibernate.initialize(usuario.getDirecciones());
+        return new ArrayList<>(usuario.getDirecciones());
     }
 
     @Transactional
-    public Direccion addDireccionToUser(Long userId, Direccion direccion) {
+    public Direccion addDireccionToUser(Long userId, DireccionDTO direccionDTO) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
-        direccion.setUsuario(usuario);
-        usuario.getDirecciones().add(direccion);
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede añadir direcciones.");
+        }
+
+        Direccion newDireccion = new Direccion();
+        newDireccion.setCalle(direccionDTO.getCalle());
+        newDireccion.setNumero(direccionDTO.getNumero());
+        newDireccion.setPiso(direccionDTO.getPiso());
+        newDireccion.setDepartamento(direccionDTO.getDepartamento());
+        newDireccion.setCp(direccionDTO.getCp());
+
+        if (direccionDTO.getLocalidad() != null && direccionDTO.getLocalidad().getId() != null) {
+            Localidad localidad = localidadRepository.findById(direccionDTO.getLocalidad().getId())
+                    .orElseThrow(() -> new RuntimeException("Localidad con ID " + direccionDTO.getLocalidad().getId() + " no encontrada."));
+            newDireccion.setLocalidad(localidad);
+        } else {
+            throw new IllegalArgumentException("La dirección debe tener una Localidad válida con ID.");
+        }
+
+        usuario.addDireccion(newDireccion);
         usuarioRepository.save(usuario);
-        return direccion;
+        return newDireccion;
     }
 
     @Transactional
-    public Direccion updateDireccionForUser(Long userId, Long direccionId, Direccion updatedDireccion) {
+    public Direccion updateDireccionForUser(Long userId, Long direccionId, DireccionDTO updatedDireccionDTO) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede actualizar direcciones.");
+        }
+
+        Hibernate.initialize(usuario.getDirecciones());
 
         Direccion existingDireccion = usuario.getDirecciones().stream()
                 .filter(d -> d.getId().equals(direccionId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Dirección no encontrada con ID: " + direccionId + " para el usuario " + userId));
 
-        existingDireccion.setCalle(updatedDireccion.getCalle());
-        existingDireccion.setNumero(updatedDireccion.getNumero());
-        existingDireccion.setPiso(updatedDireccion.getPiso());
-        existingDireccion.setDepartamento(updatedDireccion.getDepartamento());
-        existingDireccion.setCp(updatedDireccion.getCp());
-        // TODO: Actualizar Localidad y Provincia si es necesario.
+        existingDireccion.setCalle(updatedDireccionDTO.getCalle());
+        existingDireccion.setNumero(updatedDireccionDTO.getNumero());
+        existingDireccion.setPiso(updatedDireccionDTO.getPiso());
+        existingDireccion.setDepartamento(updatedDireccionDTO.getDepartamento());
+        existingDireccion.setCp(updatedDireccionDTO.getCp());
+
+        if (updatedDireccionDTO.getLocalidad() != null && updatedDireccionDTO.getLocalidad().getId() != null) {
+            Localidad localidad = localidadRepository.findById(updatedDireccionDTO.getLocalidad().getId())
+                    .orElseThrow(() -> new RuntimeException("Localidad con ID " + updatedDireccionDTO.getLocalidad().getId() + " no encontrada."));
+            existingDireccion.setLocalidad(localidad);
+        } else {
+            throw new IllegalArgumentException("La dirección debe tener una Localidad válida con ID.");
+        }
 
         usuarioRepository.save(usuario);
         return existingDireccion;
@@ -340,12 +505,39 @@ public class UsuarioService extends BaseService<Usuario,Long> {
     public void removeDireccionFromUser(Long userId, Long direccionId) {
         Usuario usuario = usuarioRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
-
-        boolean removed = usuario.getDirecciones().removeIf(d -> d.getId().equals(direccionId));
-
-        if (!removed) {
-            throw new RuntimeException("Dirección no encontrada con ID: " + direccionId + " para el usuario " + userId);
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta está desactivada y no puede eliminar direcciones.");
         }
+
+        Hibernate.initialize(usuario.getDirecciones());
+
+        Direccion direccionToRemove = usuario.getDirecciones().stream()
+                .filter(d -> d.getId().equals(direccionId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Dirección no encontrada con ID: " + direccionId + " para el usuario " + userId));
+
+        usuario.removeDireccion(direccionToRemove);
+        usuarioRepository.save(usuario);
+    }
+
+    @Transactional
+    public void deactivateAccount(Long userId) {
+        Optional<Usuario> usuarioOptional = usuarioRepository.findById(userId);
+        if (usuarioOptional.isEmpty()) {
+            throw new RuntimeException("Usuario no encontrado con ID: " + userId);
+        }
+        Usuario usuario = usuarioOptional.get();
+
+        if (!usuario.isActivo()) {
+            throw new RuntimeException("La cuenta ya está desactivada.");
+        }
+
+        usuario.setActivo(false);
+        // Ojo: al desactivar, se limpia el email y username para permitir su reutilización.
+        // Si necesitas mantenerlos para auditoría, ajusta esto.
+        usuario.setEmail(null);
+        usuario.setUserName("deactivated_" + UUID.randomUUID().toString());
+
         usuarioRepository.save(usuario);
     }
 }

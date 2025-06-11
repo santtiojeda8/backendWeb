@@ -2,8 +2,6 @@ package com.ecommerce.ecommerce.dto;
 
 import com.ecommerce.ecommerce.Entities.enums.Sexo;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull; // Mantén si son estrictamente requeridos para la actualización
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +11,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 // Importa DomicilioDTO si no lo tienes ya, y asegúrate de que exista
-import com.ecommerce.ecommerce.dto.DomicilioDTO; // Asume que tienes un DTO para las direcciones
+
 
 @Data
 @Builder
@@ -41,5 +39,5 @@ public class UserProfileUpdateDTO {
 
     // Asegúrate de que DomicilioDTO tiene los mismos campos que tu entidad Direccion.
     // Y que tiene un 'id' para direcciones existentes.
-    private List<DomicilioDTO> addresses; // Para enviar todas las direcciones actualizadas
+    private List<DireccionDTO> addresses; // Para enviar todas las direcciones actualizadas
 }

@@ -27,6 +27,7 @@ public class UserDTO {
     private LocalDate fechaNacimiento;
     private String telefono;
     private Rol role;
-    private ImagenDTO profileImage; // Este campo recibe la URL de la imagen de perfil
-    private List<DomicilioDTO> addresses;
+    private ImagenDTO imagenUser;
+    private List<DireccionDTO> addresses;
+    private boolean activo; // <--- ¡AÑADIR ESTE CAMPO AQUÍ!
 }

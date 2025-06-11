@@ -1,7 +1,11 @@
 package com.ecommerce.ecommerce.Entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
+
+import java.math.BigDecimal; // <--- ¡ASEGÚRATE DE ESTA IMPORTACIÓN!
 
 @Entity
 @Table(name = "orden_compra_detalle")
@@ -9,64 +13,45 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-// Agregamos @EntityListeners para los callbacks de ciclo de vida si usas listeners externos,
-// pero para métodos dentro de la propia entidad, @PrePersist y @PreUpdate son suficientes.
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true, exclude = "ordenCompra")
 public class OrdenCompraDetalle extends Base {
 
-    // @ManyToOne es el lado propietario de la relación, la columna 'orden_compra_id'
-    // está definida aquí, lo cual es correcto.
-    @ManyToOne(fetch = FetchType.LAZY) // Usar LAZY fetch es una buena práctica para ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "orden_compra_id")
+    @JsonBackReference("ordenCompra-detalles")
     private OrdenCompra ordenCompra;
 
-    @ManyToOne(fetch = FetchType.LAZY) // Usar LAZY fetch
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "productodetalle_id")
     private ProductoDetalle productoDetalle;
 
     @Column(name = "cantidad")
     private Integer cantidad;
 
-    @Column(name = "subtotal")
-    private Double subtotal; // Este campo se calculará automáticamente
+    @Column(name = "precio_unitario", precision = 10, scale = 2)
+    private BigDecimal precioUnitario; // <--- ¡DEBE SER BIGDECIMAL!
 
-    // Método para calcular el subtotal (ya existía)
-    public Double calcularSubtotal() {
-        // Asegurarse de que productoDetalle y su precioCompra no sean nulos
-        if (this.productoDetalle != null && this.productoDetalle.getPrecioCompra() != null && this.cantidad != null) {
-            return this.productoDetalle.getPrecioCompra() * this.cantidad;
+    @Column(name = "subtotal", precision = 10, scale = 2)
+    private BigDecimal subtotal; // <--- ¡DEBE SER BIGDECIMAL!
+
+    // --- CORRECCIÓN CLAVE AQUÍ ---
+    // Este método asegura que el subtotal se calcule correctamente en la entidad
+    public BigDecimal calcularSubtotal() {
+        if (this.precioUnitario != null && this.cantidad != null) {
+            return this.precioUnitario.multiply(new BigDecimal(this.cantidad));
         }
-        return 0.0; // Retorna 0.0 si no se puede calcular
+        return BigDecimal.ZERO;
     }
 
-    // --- Callbacks de Ciclo de Vida JPA ---
-
-    // Se ejecuta antes de que la entidad sea persistida (insertada)
     @PrePersist
-    public void prePersist() {
-        this.subtotal = calcularSubtotal();
-        // Opcional: Si quieres actualizar el total de la orden padre inmediatamente
-        // Esto puede causar problemas si la orden padre aún no está persistida o gestionada
-        // Es más seguro manejar la actualización del total en la entidad OrdenCompra
-    }
-
-    // Se ejecuta antes de que la entidad sea actualizada
     @PreUpdate
-    public void preUpdate() {
+    public void prePersistAndUpdate() {
         this.subtotal = calcularSubtotal();
-        // Opcional: Si quieres actualizar el total de la orden padre inmediatamente
-        // Es más seguro manejar la actualización del total en la entidad OrdenCompra
-    }
-
-    // --- Métodos para gestionar la relación bidireccional ---
-    // Es una buena práctica tener estos métodos en ambos lados de la relación bidireccional
-    // aunque el lado ManyToOne (este) es el propietario.
-
-    public void setOrdenCompra(OrdenCompra ordenCompra) {
-        this.ordenCompra = ordenCompra;
-    }
-
-    public void setProductoDetalle(ProductoDetalle productoDetalle) {
-        this.productoDetalle = productoDetalle;
+        // Asegurarse de que precioUnitario no sea null antes de calcular
+        // (ya lo validamos en calcularSubtotal, pero es una buena práctica)
+        if (this.precioUnitario == null && this.productoDetalle != null && this.productoDetalle.getPrecioCompra() != null) {
+            this.precioUnitario = this.productoDetalle.getPrecioCompra();
+        }
     }
 }

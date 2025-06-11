@@ -25,10 +25,14 @@ public class ApplicationConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         // Retorna una implementación de UserDetailsService usando una expresión lambda.
-        // Busca el usuario en tu repositorio por el 'username' proporcionado.
-        // Si no lo encuentra, lanza una excepción UsernameNotFoundException.
-        return username -> usuarioRepository.findByUserName(username) // >>> USAR TU METODO findByUserName <<<
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        // Ahora, busca el usuario en tu repositorio por el 'username' o 'email'
+        // pero SOLO si la cuenta está ACTIVA.
+        return usernameOrEmail -> {
+            // Intenta buscar por username y que esté activo
+            return usuarioRepository.findByUserNameAndActivoTrue(usernameOrEmail)
+                    .or(() -> usuarioRepository.findByEmailAndActivoTrue(usernameOrEmail)) // Si no lo encuentra por username, intenta por email (activo)
+                    .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado o inactivo: " + usernameOrEmail));
+        };
     }
 
     // >>> Bean AuthenticationProvider <<<
