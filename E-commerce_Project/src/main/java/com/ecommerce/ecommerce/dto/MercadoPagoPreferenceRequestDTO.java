@@ -24,10 +24,10 @@ public class MercadoPagoPreferenceRequestDTO {
     private Long direccionId;
     private DireccionDTO nuevaDireccion;
 
-    // ****** ¡AQUÍ ESTÁ EL CAMBIO QUE NECESITAS! ******
-    private List<OrdenCompraDetalleDTO> detalles; // Cambiado de CreateOrdenCompraDetalleDTO
+    // ****** ¡ESTA ES LA LÍNEA QUE DEBES CAMBIAR! ******
+    private List<CreateOrdenCompraDetalleDTO> detalles; // <-- ¡Cámbialo a CreateOrdenCompraDetalleDTO!
     // *************************************************
 
     private String notification_url;
-    private String direccionEnvio; // Mantener si el front lo envía, aunque no se use directamente en crearOrdenInicial
+    private String direccionEnvio;
 }

@@ -14,6 +14,7 @@ import java.math.BigDecimal; // <--- ¡ASEGÚRATE DE ESTA IMPORTACIÓN!
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
+@EqualsAndHashCode(callSuper = true, exclude = "ordenCompra")
 public class OrdenCompraDetalle extends Base {
 
     @ManyToOne(fetch = FetchType.LAZY)
